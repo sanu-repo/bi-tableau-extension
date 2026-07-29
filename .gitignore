@@ -20,3 +20,6 @@ npm-debug.log*
 
 # Tableau extension manifests (environment-specific, not shared)
 *.trex
+
+# Unwanted files
+ARM Command Center V5.html

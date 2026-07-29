@@ -1,0 +1,93 @@
+/* dialog.css — Aldar Page Tabs */
+:root {
+  --bg:             #F7F5F0;
+  --surface:        #FFFFFF;
+  --surface2:       #F0EDE8;
+  --border:         #E8E4DD;
+  --accent:         #D4782F;
+  --text:           #1A1A1A;
+  --text-secondary: #4A4A4A;
+  --text-muted:     #6B6B6B;
+  --danger:         #C62828;
+  --radius:         8px;
+  --font:           'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: var(--font);
+  background: var(--bg); color: var(--text); font-size: 13px;
+}
+.dialog-root { display: flex; flex-direction: column; height: 100vh; }
+.dialog-header { padding: 16px 20px 8px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.dialog-header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+.dialog-header p { margin: 4px 0 0; color: var(--text-muted); font-size: 12px; }
+.dialog-main { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.dialog-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 20px; border-top: 1px solid var(--border); background: var(--surface);
+}
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 12px;
+}
+.card h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; }
+.field { display: flex; flex-direction: column; margin-bottom: 10px; }
+.field.row { flex-direction: row; align-items: center; gap: 10px; }
+.field.row label { width: 160px; }
+.field label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+.field .help { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.field input[type=text], .field select {
+  padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px;
+  font-family: inherit; font-size: 13px; background: var(--surface); color: var(--text);
+}
+.field input[type=text]:focus, .field select:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(212,120,47,.15);
+}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.color-row { display: flex; gap: 6px; align-items: center; }
+.color-row input[type=color] {
+  width: 36px; height: 32px; border: 1px solid var(--border); border-radius: 6px;
+  padding: 2px; background: var(--surface); cursor: pointer;
+}
+.color-row input[type=text] {
+  flex: 1; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px;
+}
+.tabs-list { display: flex; flex-direction: column; gap: 10px; }
+.tab-row { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--surface2); }
+.tab-row-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  font-size: 12px; font-weight: 600;
+}
+.tab-row-head .tab-index {
+  background: var(--text); color: #fff; border-radius: 4px;
+  padding: 2px 6px; font-size: 11px;
+}
+.tab-row-head .tab-summary { color: var(--text-muted); font-weight: 500; }
+
+.icon-source-row { display: flex; gap: 14px; margin-bottom: 6px; }
+.radio-inline { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; }
+.radio-inline input { accent-color: var(--accent); cursor: pointer; }
+
+.t-icon-upload-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.t-icon-upload-row input[type=file] { font-size: 11px; max-width: 190px; }
+.t-icon-preview {
+  width: 28px; height: 28px; object-fit: contain; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--surface); padding: 2px;
+}
+.t-icon-error { color: var(--danger); }
+
+.btn {
+  padding: 8px 14px; font-size: 13px; font-weight: 600; border-radius: 6px;
+  border: 1px solid transparent; cursor: pointer; font-family: inherit;
+}
+.btn.primary { background: var(--text); color: #fff; }
+.btn.primary:hover { background: #000; }
+.btn.ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+.btn.ghost:hover { background: var(--surface2); border-color: var(--accent); color: var(--text); }
+.btn.small { padding: 4px 10px; font-size: 11px; font-weight: 500; }
+.param-status { margin-top: 6px; font-size: 11px; padding: 4px 8px; border-radius: 4px; }
+.param-status.ok { background: #e6f4ea; color: #137333; }
+.param-status.err { background: #fce8e6; color: #b3261e; }

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configure Page Tabs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dialog.css" />
+  <script src="js/tableau.extensions.1.latest.min.js"></script>
+</head>
+<body>
+  <div class="dialog-root">
+    <header class="dialog-header">
+      <h1>Page Tabs Settings</h1>
+      <p>Configure tabs and appearance. Tabs update the bound Tableau parameter on click.</p>
+    </header>
+
+    <main class="dialog-main">
+      <section class="card">
+        <h2>Parameter binding</h2>
+        <div class="field">
+          <label for="targetParameter">Target parameter name</label>
+          <input id="targetParameter" type="text" placeholder="e.g., Page Selector" />
+          <span class="help">Exact case-sensitive name of the Tableau parameter.</span>
+          <div id="paramStatus" class="param-status" hidden></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Tabs</h2>
+        <div class="field row">
+          <label for="tabCount">Number of tabs</label>
+          <select id="tabCount">
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+          </select>
+        </div>
+        <div id="tabsList" class="tabs-list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Colors</h2>
+        <div class="grid-2">
+          <div class="field"><label>Container background</label><div class="color-row"><input id="containerBgColor" type="color"/><input id="containerBgColorText" type="text"/></div></div>
+          <div class="field"><label>Active tab background</label><div class="color-row"><input id="activeBgColor" type="color"/><input id="activeBgColorText" type="text"/></div></div>
+          <div class="field"><label>Active text</label><div class="color-row"><input id="activeFontColor" type="color"/><input id="activeFontColorText" type="text"/></div></div>
+          <div class="field"><label>Inactive text</label><div class="color-row"><input id="inactiveFontColor" type="color"/><input id="inactiveFontColorText" type="text"/></div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Shape</h2>
+        <div class="grid-2">
+          <div class="field"><label for="outerRadius">Outer container radius</label><input id="outerRadius" type="text" placeholder="e.g., 999px" /></div>
+          <div class="field"><label for="activeRadius">Active tab radius</label><input id="activeRadius" type="text" placeholder="e.g., 10px" /></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="dialog-footer">
+      <button id="btnCancel" class="btn ghost">Cancel</button>
+      <button id="btnSave" class="btn primary">Save</button>
+    </footer>
+  </div>
+
+  <template id="tab-row-template">
+    <div class="tab-row">
+      <div class="tab-row-head">
+        <span class="tab-index"></span>
+        <span class="tab-summary"></span>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Label</label>
+          <input class="t-name" type="text" placeholder="Tab name"/>
+        </div>
+        <div class="field">
+          <label>Parameter value</label>
+          <input class="t-value" type="text" placeholder="Value written on click"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Icon</label>
+        <div class="icon-source-row">
+          <label class="radio-inline"><input type="radio" class="t-icon-src" value="bundled" checked> Bundled</label>
+          <label class="radio-inline"><input type="radio" class="t-icon-src" value="custom"> Custom upload</label>
+        </div>
+        <select class="t-icon"></select>
+        <div class="t-icon-upload-row" hidden>
+          <input type="file" class="t-icon-file" accept="image/png,image/jpeg,image/svg+xml" />
+          <img class="t-icon-preview" hidden />
+          <button type="button" class="t-icon-clear btn ghost small">Remove</button>
+          <span class="help t-icon-error"></span>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="icons.js"></script>
+  <script src="dialog.js"></script>
+</body>
+</html>

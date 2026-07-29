@@ -1,0 +1,124 @@
+/* style.css — Aldar Page Tabs (segmented-pill control) */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: transparent;
+  color: #111;
+  overflow: hidden;
+  height: 100%;
+}
+
+.nav-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.gear-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #E8E4DD;
+  border-radius: 6px;
+  color: #6B6B6B;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 140ms ease, color 140ms ease, border-color 140ms ease;
+  z-index: 10;
+  padding: 0;
+}
+.nav-shell:hover .gear-btn { opacity: 1; }
+.gear-btn:hover { color: #D4782F; border-color: #D4782F; }
+.gear-btn:focus-visible { opacity: 1; outline: 2px solid #D4782F; outline-offset: 1px; }
+
+/* ── Outer pill container ── */
+.nav-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  max-height: 40px;
+  padding: 3px;
+  background: var(--container-bg, #F0EDE8);
+  border-radius: var(--outer-radius, 999px);
+  overflow: hidden;
+}
+
+.tab {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  text-align: left;
+  font-family: inherit;
+  background: transparent;
+  color: var(--inactive-fg, #6B6B6B);
+  border-radius: var(--active-radius, 10px);
+  transition: background-color 140ms ease, color 140ms ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.tab:hover:not(.active) { color: var(--active-fg, #1A1A1A); }
+.tab:focus-visible { box-shadow: 0 0 0 2px #D4782F55; }
+
+.tab .icon-wrap {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+.tab .icon-wrap svg { display: block; }
+.tab .icon-wrap img.tab-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  display: block;
+}
+
+.tab .label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab.active {
+  background: var(--active-bg, #FFFFFF);
+  color: var(--active-fg, #1A1A1A);
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.08);
+}
+.tab.active .label { font-weight: 600; }
+
+.empty-state {
+  width: 100%;
+  text-align: center;
+  padding: 16px;
+  color: #6b6b6b;
+  font-size: 13px;
+}
+.empty-state .hint { font-size: 11px; opacity: 0.7; margin-top: 4px; }

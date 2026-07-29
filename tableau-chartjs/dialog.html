@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chart Configuration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <link rel="stylesheet" href="dialog.css" />
+</head>
+<body>
+
+<div id="config-panel">
+
+  <!-- Header -->
+  <div id="config-header">
+    <div>
+      <h2>Chart Configuration</h2>
+      <p class="header-sub">Configure data, appearance, and chart options</p>
+    </div>
+    <button id="config-close" onclick="cancelConfig()" title="Cancel">&#215;</button>
+  </div>
+
+  <!-- Tabs -->
+  <div id="config-tabs">
+    <div class="ctab active" onclick="showTab('tab-data')">Data</div>
+    <div class="ctab" onclick="showTab('tab-style')">Style</div>
+    <div class="ctab" onclick="showTab('tab-axes')">Axes</div>
+    <div class="ctab" onclick="showTab('tab-plugins')">Plugins</div>
+    <div class="ctab" onclick="showTab('tab-json')">JSON</div>
+  </div>
+
+  <div id="config-body">
+
+    <!-- ── DATA TAB ── -->
+    <div class="tab-pane active" id="tab-data">
+      <p class="section-title">Chart Type</p>
+      <div class="field-group">
+        <label>Chart Type</label>
+        <select id="cfg-chart-type" onchange="cfg.chartType=this.value">
+          <optgroup label="Basic">
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+            <option value="pie">Pie</option>
+            <option value="doughnut">Doughnut</option>
+            <option value="polarArea">Polar Area</option>
+            <option value="radar">Radar</option>
+            <option value="scatter">Scatter</option>
+            <option value="bubble">Bubble</option>
+          </optgroup>
+          <optgroup label="Variants">
+            <option value="bar-horizontal">Bar (Horizontal)</option>
+            <option value="bar-stacked">Bar (Stacked)</option>
+            <option value="bar-stacked100">Bar (100% Stacked)</option>
+            <option value="line-area">Line (Area)</option>
+            <option value="line-stepped">Line (Stepped)</option>
+            <option value="line-smooth">Line (Smooth)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <p class="section-title">Tableau Data Mapping</p>
+      <div class="field-group">
+        <label>Data Source (Worksheet)</label>
+        <select id="cfg-worksheet" onchange="onWorksheetChange(this.value)">
+          <option value="">— select worksheet —</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Label / Category Column</label>
+        <select id="cfg-label-field" onchange="cfg.tableau.labelField=this.value">
+          <option value="">— select field —</option>
+        </select>
+      </div>
+
+      <p class="section-title">Dataset Series</p>
+      <div id="data-fields"></div>
+      <button class="form-btn secondary" style="margin-top:8px;width:100%" onclick="addDatasetRow()">+ Add Series</button>
+
+      <p class="section-title">Sample / Demo Data</p>
+      <div class="toggle-row">
+        <span class="toggle-label">Enable demo data (no Tableau connection needed)</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-demo-data" onchange="cfg.useDemo=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- ── STYLE TAB ── -->
+    <div class="tab-pane" id="tab-style">
+      <p class="section-title">Colors</p>
+      <div id="color-list"></div>
+      <button class="form-btn secondary" onclick="addColor()">+ Add Color</button>
+
+      <p class="section-title">Fonts</p>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Font Family</label>
+          <select id="cfg-font-family" onchange="cfg.style.fontFamily=this.value">
+            <option value="'Inter', sans-serif">Inter</option>
+            <option value="'Segoe UI', sans-serif">Segoe UI</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="monospace">Monospace</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Base Font Size</label>
+          <input type="number" id="cfg-font-size" value="12" min="8" max="24"
+            onchange="cfg.style.fontSize=+this.value" />
+        </div>
+      </div>
+
+      <p class="section-title">Borders &amp; Fill</p>
+      <div class="toggle-row">
+        <span class="toggle-label">Fill areas (line / radar)</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-fill" onchange="cfg.style.fill=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="field-row" style="margin-top:10px">
+        <div class="field-group">
+          <label>Border Width</label>
+          <input type="number" id="cfg-border-width" value="2" min="0" max="10"
+            onchange="cfg.style.borderWidth=+this.value" />
+        </div>
+        <div class="field-group">
+          <label>Point Radius</label>
+          <input type="number" id="cfg-point-radius" value="3" min="0" max="20"
+            onchange="cfg.style.pointRadius=+this.value" />
+        </div>
+      </div>
+
+      <p class="section-title">Background</p>
+      <div class="field-group">
+        <label>Canvas Background Color</label>
+        <input type="text" id="cfg-bg-color" value="transparent"
+          placeholder="transparent / #fff / rgba(…)"
+          oninput="cfg.style.backgroundColor=this.value" />
+      </div>
+    </div>
+
+    <!-- ── AXES TAB ── -->
+    <div class="tab-pane" id="tab-axes">
+      <p class="section-title">X Axis</p>
+      <div class="toggle-row">
+        <span class="toggle-label">Display X Axis</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-x-display" checked onchange="cfg.axes.x.display=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="field-group" style="margin-top:10px">
+        <label>X Axis Title</label>
+        <input type="text" id="cfg-x-title" placeholder="e.g. Month"
+          oninput="cfg.axes.x.title=this.value" />
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Grid Lines</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-x-grid" checked onchange="cfg.axes.x.grid=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <p class="section-title">Y Axis</p>
+      <div class="toggle-row">
+        <span class="toggle-label">Display Y Axis</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-y-display" checked onchange="cfg.axes.y.display=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="field-group" style="margin-top:10px">
+        <label>Y Axis Title</label>
+        <input type="text" id="cfg-y-title" placeholder="e.g. Sales ($)"
+          oninput="cfg.axes.y.title=this.value" />
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Y Min</label>
+          <input type="text" id="cfg-y-min" placeholder="auto"
+            oninput="cfg.axes.y.min=this.value!==''?+this.value:undefined" />
+        </div>
+        <div class="field-group">
+          <label>Y Max</label>
+          <input type="text" id="cfg-y-max" placeholder="auto"
+            oninput="cfg.axes.y.max=this.value!==''?+this.value:undefined" />
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Grid Lines</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-y-grid" checked onchange="cfg.axes.y.grid=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Logarithmic Scale</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-y-log" onchange="cfg.axes.y.log=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- ── PLUGINS TAB ── -->
+    <div class="tab-pane" id="tab-plugins">
+      <p class="section-title">Legend</p>
+      <div class="toggle-row">
+        <span class="toggle-label">Show Legend</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-legend" checked
+            onchange="cfg.options.plugins.legend.display=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="field-group" style="margin-top:10px">
+        <label>Legend Position</label>
+        <select id="cfg-legend-pos"
+          onchange="cfg.options.plugins.legend.position=this.value">
+          <option value="top">Top</option>
+          <option value="bottom">Bottom</option>
+          <option value="left">Left</option>
+          <option value="right">Right</option>
+        </select>
+      </div>
+
+      <p class="section-title">Tooltip</p>
+      <div class="toggle-row">
+        <span class="toggle-label">Enable Tooltips</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-tooltip" checked
+            onchange="cfg.options.plugins.tooltip.enabled=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <p class="section-title">Title</p>
+      <div class="toggle-row">
+        <span class="toggle-label">Show Title</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-title-show"
+            onchange="cfg.options.plugins.title.display=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="field-group" style="margin-top:10px">
+        <label>Title Text</label>
+        <input type="text" id="cfg-title-text" placeholder="My Chart"
+          oninput="cfg.options.plugins.title.text=this.value; cfg.options.plugins.title.display=!!this.value; document.getElementById('cfg-title-show').checked=!!this.value" />
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Title Font Size</label>
+          <input type="number" id="cfg-title-size" value="16" min="8" max="36"
+            oninput="cfg.options.plugins.title.font={size:+this.value}" />
+        </div>
+        <div class="field-group">
+          <label>Title Align</label>
+          <select id="cfg-title-align"
+            onchange="cfg.options.plugins.title.align=this.value">
+            <option value="center">Center</option>
+            <option value="start">Start</option>
+            <option value="end">End</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="section-title">Animation</p>
+      <div class="toggle-row">
+        <span class="toggle-label">Enable Animation</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-animation" checked
+            onchange="cfg.options.animation=this.checked?{}:false" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <p class="section-title">Responsive</p>
+      <div class="toggle-row">
+        <span class="toggle-label">Responsive</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-responsive" checked
+            onchange="cfg.options.responsive=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Maintain Aspect Ratio</span>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-aspect"
+            onchange="cfg.options.maintainAspectRatio=this.checked" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- ── JSON TAB ── -->
+    <div class="tab-pane" id="tab-json">
+      <p class="section-title">Configuration JSON</p>
+      <div class="field-group">
+        <label>Edit the full cfg object and Apply to load all settings at once</label>
+        <textarea id="raw-json" spellcheck="false"></textarea>
+      </div>
+      <div class="json-actions">
+        <button class="form-btn" onclick="applyRawJson()">Apply JSON</button>
+        <button class="form-btn secondary" onclick="syncJsonFromCfg()">&#8635; Sync from UI</button>
+        <button class="form-btn secondary" onclick="copyJson()">Copy</button>
+      </div>
+      <div id="json-status"></div>
+    </div>
+
+  </div><!-- /config-body -->
+
+  <!-- Footer -->
+  <div id="config-footer">
+    <button class="form-btn secondary" onclick="cancelConfig()">Cancel</button>
+    <button class="form-btn" onclick="applyAndClose()">Save</button>
+  </div>
+
+</div><!-- /config-panel -->
+
+<script src="dialog.js"></script>
+</body>
+</html>

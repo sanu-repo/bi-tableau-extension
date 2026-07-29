@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configure — Fit-out Pipeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <link rel="stylesheet" href="dialog.css" />
+</head>
+<body>
+<div id="config-panel">
+
+  <div id="config-header">
+    <div>
+      <h2>Configure — Fit-out Pipeline</h2>
+      <p class="header-sub">Map worksheet fields and configure stages</p>
+    </div>
+    <button id="config-close" onclick="cancelConfig()">&#215;</button>
+  </div>
+
+  <div id="config-tabs">
+    <button class="ctab active" data-tab="main">Settings</button>
+    <button class="ctab" data-tab="filters">Filters</button>
+  </div>
+
+  <div id="config-body">
+
+    <!-- ── Tab 1: Settings ──────────────────────────────────────────────────── -->
+    <div class="tab-pane active" id="tab-main">
+
+      <div class="section-title">Worksheet</div>
+      <div class="field-group">
+        <label>Source Worksheet <span style="color:var(--danger)">*</span></label>
+        <select id="ws-source"><option value="">— select worksheet —</option></select>
+        <div class="field-hint">The worksheet that feeds this extension (one row per tenant × stage)</div>
+      </div>
+
+      <div class="section-title">Field Mapping</div>
+      <div class="field-group">
+        <label>Tenant Name <span style="color:var(--danger)">*</span></label>
+        <select id="fld-tenant"><option value="">— select field —</option></select>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Asset / Location <span style="color:var(--danger)">*</span></label>
+          <select id="fld-asset"><option value="">— select field —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Rent Start Date <span style="color:var(--danger)">*</span></label>
+          <select id="fld-rent-start"><option value="">— select field —</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Manager <span style="color:var(--danger)">*</span></label>
+          <select id="fld-manager"><option value="">— select field —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Stage Name <span style="color:var(--danger)">*</span></label>
+          <select id="fld-stage-name"><option value="">— select field —</option></select>
+          <div class="field-hint">Column with milestone labels (e.g. "Handover to tenant")</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Stage Status <span style="color:var(--danger)">*</span></label>
+          <select id="fld-stage-status"><option value="">— select field —</option></select>
+          <div class="field-hint">Text column: "Completed", "Pending", etc.</div>
+        </div>
+        <div class="field-group">
+          <label>Stage Date</label>
+          <select id="fld-stage-date"><option value="">— none —</option></select>
+          <div class="field-hint">Optional — date shown next to each milestone</div>
+        </div>
+      </div>
+
+      <div class="section-title">Stage Configuration</div>
+      <div class="field-group">
+        <label>Completed Status Value <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="inp-completed-value" value="Completed" placeholder="e.g. Completed" />
+        <div class="field-hint">Exact text value in the Stage Status column that means "done"</div>
+      </div>
+
+      <div class="field-group">
+        <label>Stage Order</label>
+        <div class="field-hint" style="margin-bottom:8px;">Discover stages from the worksheet, then drag or reorder with the arrows.</div>
+        <button class="discover-btn" id="btn-discover-stages">&#10003; Discover Stages from Worksheet</button>
+        <div class="stage-list" id="stage-order-list"></div>
+        <div id="discover-msg" style="font-size:11px;color:var(--text-muted);margin-top:4px;"></div>
+      </div>
+
+    </div>
+
+    <!-- ── Tab 2: Filters ───────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-filters">
+
+      <div class="section-title">Date Filter</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Enable Date Filter</div>
+          <div class="toggle-desc">Adds a date range pill to the filter bar</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="filter-date-enabled" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div id="date-filter-fields" style="display:none; padding-top:10px;">
+        <div class="field-group">
+          <label>Pill Label</label>
+          <input type="text" id="filter-date-label" placeholder="e.g. Rent Start" maxlength="20" />
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Date Field</label>
+            <select id="filter-date-field">
+              <option value="rentStartField">Rent Start Date</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Default Preset</label>
+            <select id="filter-date-default">
+              <option value="all">All Time</option>
+              <option value="mtd">Month to Date</option>
+              <option value="qtd">Quarter to Date</option>
+              <option value="ytd">Year to Date</option>
+              <option value="last30">Last 30 days</option>
+              <option value="last60">Last 60 days</option>
+              <option value="last90">Last 90 days</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Category Filters</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5;">
+        Add up to 6 filters. Each appears as a pill dropdown in the filter bar.
+      </p>
+      <div class="filter-list" id="filter-list"></div>
+      <div class="add-stage-row">
+        <button id="btn-add-filter">+ Add Filter</button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="config-footer">
+    <button class="form-btn secondary" onclick="cancelConfig()">Cancel</button>
+    <button class="form-btn" id="btn-save">Save &amp; Apply</button>
+  </div>
+
+</div>
+<script src="dialog.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Configure Navigation Bar</title>
+  <link rel="stylesheet" href="dialog.css" />
+  <script src="tableau.extensions.1.latest.min.js"></script>
+</head>
+<body>
+  <div class="dialog-root">
+    <header class="dialog-header">
+      <h1>Navigation Bar Settings</h1>
+      <p>Configure tabs and appearance. Tabs update the bound Tableau parameter on click.</p>
+    </header>
+
+    <main class="dialog-main">
+      <section class="card">
+        <h2>Parameter binding</h2>
+        <div class="field">
+          <label for="targetParameter">Target parameter name</label>
+          <input id="targetParameter" type="text" placeholder="e.g., View Selector" />
+          <span class="help">Exact case-sensitive name of the Tableau parameter.</span>
+          <div id="paramStatus" class="param-status" hidden></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Tabs</h2>
+        <div class="field row">
+          <label for="tabCount">Number of tabs</label>
+          <select id="tabCount">
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          </select>
+        </div>
+        <div id="tabsList" class="tabs-list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Active tab colors</h2>
+        <div class="grid-2">
+          <div class="field"><label>Background</label><div class="color-row"><input id="activeBgColor" type="color"/><input id="activeBgColorText" type="text"/></div></div>
+          <div class="field"><label>Text</label><div class="color-row"><input id="activeFontColor" type="color"/><input id="activeFontColorText" type="text"/></div></div>
+          <div class="field"><label>Icon background</label><div class="color-row"><input id="activeIconBgColor" type="color"/><input id="activeIconBgColorText" type="text"/></div></div>
+          <div class="field"><label>Icon color</label><div class="color-row"><input id="activeIconFontColor" type="color"/><input id="activeIconFontColorText" type="text"/></div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Inactive tab colors</h2>
+        <div class="grid-2">
+          <div class="field"><label>Background</label><div class="color-row"><input id="inactiveBgColor" type="color"/><input id="inactiveBgColorText" type="text"/></div></div>
+          <div class="field"><label>Text</label><div class="color-row"><input id="inactiveFontColor" type="color"/><input id="inactiveFontColorText" type="text"/></div></div>
+          <div class="field"><label>Icon background</label><div class="color-row"><input id="inactiveIconBgColor" type="color"/><input id="inactiveIconBgColorText" type="text"/></div></div>
+          <div class="field"><label>Icon color</label><div class="color-row"><input id="inactiveIconFontColor" type="color"/><input id="inactiveIconFontColorText" type="text"/></div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Shape</h2>
+        <div class="field row">
+          <label for="borderRadius">Border radius</label>
+          <input id="borderRadius" type="text" placeholder="e.g., 10px" />
+        </div>
+      </section>
+    </main>
+
+    <footer class="dialog-footer">
+      <button id="btnCancel" class="btn ghost">Cancel</button>
+      <button id="btnSave" class="btn primary">Save</button>
+    </footer>
+  </div>
+
+  <template id="tab-row-template">
+    <div class="tab-row">
+      <div class="tab-row-head">
+        <span class="tab-index"></span>
+        <span class="tab-summary"></span>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Label</label>
+          <input class="t-name" type="text" placeholder="Tab name"/>
+        </div>
+        <div class="field">
+          <label>Subtitle</label>
+          <input class="t-sub" type="text" placeholder="Optional caption"/>
+        </div>
+        <div class="field">
+          <label>Parameter value</label>
+          <input class="t-value" type="text" placeholder="Value written on click"/>
+        </div>
+        <div class="field">
+          <label>Icon</label>
+          <select class="t-icon"></select>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="icons.js"></script>
+  <script src="dialog.js"></script>
+</body>
+</html>

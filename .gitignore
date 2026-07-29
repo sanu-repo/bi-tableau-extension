@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Claude Code local settings (machine-specific, not shared)
+**/.claude/settings.local.json
+
+# Logs
+*.log
+
+# Tableau extension manifests (environment-specific, not shared)
+*.trex

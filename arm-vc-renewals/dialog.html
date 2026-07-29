@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configure — ARM Renewals &amp; Termination</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="tableau.extensions.1.latest.min.js"></script>
+  <link rel="stylesheet" href="dialog.css" />
+</head>
+<body>
+<div id="config-panel">
+
+  <div id="config-header">
+    <div>
+      <h2>Configure — ARM Renewals &amp; Termination</h2>
+      <p class="header-sub">Map fields, set KPI stages, and configure filters</p>
+    </div>
+    <button id="config-close" onclick="cancelConfig()">&#215;</button>
+  </div>
+
+  <div id="config-tabs">
+    <button class="ctab active" data-tab="fields">Fields</button>
+    <button class="ctab" data-tab="kpi">KPI Setup</button>
+    <button class="ctab" data-tab="filters">Filters</button>
+    <button class="ctab" data-tab="display">Display</button>
+  </div>
+
+  <div id="config-body">
+
+    <!-- ── Tab: Fields ───────────────────────────────────────────────────── -->
+    <div class="tab-pane active" id="tab-fields">
+
+      <!-- Tile 1 — Up for Renewal -->
+      <div class="section-title">Tile 1 — Up for Renewal</div>
+      <div class="field-group">
+        <label>Source Worksheet <span style="color:var(--danger)">*</span></label>
+        <select id="ws-tile-0"><option value="">— select worksheet —</option></select>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Lease Code <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t0-leasecode"><option value="">— select field —</option></select>
+          <div class="field-hint">Primary key — row count = lease count</div>
+        </div>
+        <div class="field-group">
+          <label>ACV <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t0-acv"><option value="">— select field —</option></select>
+          <div class="field-hint">Formatted as AED XM</div>
+        </div>
+      </div>
+
+      <!-- Tile 2 — In Negotiation -->
+      <div class="section-title">Tile 2 — In Negotiation</div>
+      <div class="field-group">
+        <label>Source Worksheet <span style="color:var(--danger)">*</span></label>
+        <select id="ws-tile-1"><option value="">— select worksheet —</option></select>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Lease Code <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t1-leasecode"><option value="">— select field —</option></select>
+          <div class="field-hint">Primary key — row count = lease count</div>
+        </div>
+        <div class="field-group">
+          <label>ACV <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t1-acv"><option value="">— select field —</option></select>
+          <div class="field-hint">Formatted as AED XM</div>
+        </div>
+      </div>
+
+      <!-- Tile 3 — Renewed -->
+      <div class="section-title">Tile 3 — Renewed (Signed)</div>
+      <div class="field-group">
+        <label>Source Worksheet <span style="color:var(--danger)">*</span></label>
+        <select id="ws-tile-2"><option value="">— select worksheet —</option></select>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Lease Code <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t2-leasecode"><option value="">— select field —</option></select>
+          <div class="field-hint">Primary key — row count = lease count</div>
+        </div>
+        <div class="field-group">
+          <label>ACV <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t2-acv"><option value="">— select field —</option></select>
+          <div class="field-hint">Formatted as AED XM</div>
+        </div>
+      </div>
+
+      <!-- Tile 4 — Confirmed Exits -->
+      <div class="section-title">Tile 4 — Confirmed Exits</div>
+      <div class="field-group">
+        <label>Source Worksheet <span style="color:var(--danger)">*</span></label>
+        <select id="ws-tile-3"><option value="">— select worksheet —</option></select>
+        <div class="field-hint">Also drives the exits table, donut chart, and filter bar</div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Lease Code <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t3-leasecode"><option value="">— select field —</option></select>
+        </div>
+        <div class="field-group">
+          <label>ACV <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t3-acv"><option value="">— select field —</option></select>
+          <div class="field-hint">Formatted as AED XM</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Tenant <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t3-tenant"><option value="">— select field —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Asset / Mall <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t3-asset"><option value="">— select field —</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Exit Date <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t3-exitdate"><option value="">— select field —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Source / Initiator <span style="color:var(--danger)">*</span></label>
+          <select id="fld-t3-source"><option value="">— select field —</option></select>
+          <div class="field-hint">Values with "Landlord"/"Tenant" — drives badges &amp; donut</div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Exit Reason</label>
+        <select id="fld-t3-reason"><option value="">— none —</option></select>
+      </div>
+
+    </div>
+
+    <!-- ── Tab: KPI Setup ────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-kpi">
+
+      <div class="section-title">KPI Tile Labels</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5;">
+        Customise the label shown on each KPI tile. The source worksheet for each tile is set in the Fields tab.
+      </p>
+
+      <!-- Tile 1 — neutral -->
+      <div class="kpi-tile-block">
+        <div class="kpi-tile-header">
+          <span class="kpi-color-dot neutral"></span>
+          Tile 1 — Up for Renewal
+        </div>
+        <div class="field-group">
+          <label>Label</label>
+          <input type="text" id="kpi-label-0" placeholder="e.g. Up for Renewal · 6MO" />
+        </div>
+      </div>
+
+      <!-- Tile 2 — accent orange -->
+      <div class="kpi-tile-block">
+        <div class="kpi-tile-header">
+          <span class="kpi-color-dot accent"></span>
+          Tile 2 — In Negotiation
+        </div>
+        <div class="field-group">
+          <label>Label</label>
+          <input type="text" id="kpi-label-1" placeholder="e.g. In Negotiation" />
+        </div>
+      </div>
+
+      <!-- Tile 3 — success green -->
+      <div class="kpi-tile-block">
+        <div class="kpi-tile-header">
+          <span class="kpi-color-dot success"></span>
+          Tile 3 — Renewed (Signed)
+        </div>
+        <div class="field-group">
+          <label>Label</label>
+          <input type="text" id="kpi-label-2" placeholder="e.g. Renewed (Signed)" />
+        </div>
+      </div>
+
+      <!-- Tile 4 — danger red -->
+      <div class="kpi-tile-block">
+        <div class="kpi-tile-header">
+          <span class="kpi-color-dot danger"></span>
+          Tile 4 — Confirmed Exits
+        </div>
+        <div class="field-group">
+          <label>Label</label>
+          <input type="text" id="kpi-label-3" placeholder="e.g. Confirmed Exits" />
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Tab: Filters ──────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-filters">
+
+      <div class="section-title">Date Filter</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Enable Date Filter</div>
+          <div class="toggle-desc">Adds a date range pill above the exits table</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="filter-date-enabled" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div id="date-filter-fields" style="display:none;">
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field-group">
+            <label>Pill Label</label>
+            <input type="text" id="filter-date-label" placeholder="e.g. Date" maxlength="20" />
+          </div>
+          <div class="field-group">
+            <label>Default Preset</label>
+            <select id="filter-date-default">
+              <option value="all">All Time</option>
+              <option value="mtd">Month to Date</option>
+              <option value="qtd">Quarter to Date</option>
+              <option value="ytd">Year to Date</option>
+              <option value="last30">Last 30 days</option>
+              <option value="last60">Last 60 days</option>
+              <option value="last90">Last 90 days</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-hint" style="margin-top:-4px;margin-bottom:10px;">
+          Filters on the Exit Date field mapped in the Fields tab
+        </div>
+      </div>
+
+      <div class="section-title">Category Filters</div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Asset / Mall Filter</div>
+          <div class="toggle-desc">Pill dropdown using the Asset field</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="filter-asset-enabled" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Tenant Filter</div>
+          <div class="toggle-desc">Pill dropdown using the Tenant field</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="filter-tenant-enabled" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- ── Tab: Display ─────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-display">
+
+      <div class="section-title">Exits Table Columns</div>
+      <div class="field-hint">Uncheck to hide a column from the exits table</div>
+      <div class="column-grid">
+        <label class="col-check"><input type="checkbox" id="col-vis-tenant" checked /> Tenant</label>
+        <label class="col-check"><input type="checkbox" id="col-vis-asset" checked /> Asset</label>
+        <label class="col-check"><input type="checkbox" id="col-vis-exitdate" checked /> Exit Date</label>
+        <label class="col-check"><input type="checkbox" id="col-vis-acv" checked /> ACV</label>
+        <label class="col-check"><input type="checkbox" id="col-vis-source" checked /> Source</label>
+        <label class="col-check"><input type="checkbox" id="col-vis-reason" checked /> Reason</label>
+        <label class="col-check"><input type="checkbox" id="col-vis-remaining" checked /> Remaining</label>
+      </div>
+
+      <div class="section-title">Exit Split Panel</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Show Exit Split Panel</div>
+          <div class="toggle-desc">Uncheck to hide the donut chart entirely</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="disp-show-exit-split" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="config-footer">
+    <button class="form-btn secondary" onclick="cancelConfig()">Cancel</button>
+    <button class="form-btn" id="btn-save">Save &amp; Apply</button>
+  </div>
+
+</div>
+<script src="dialog.js"></script>
+</body>
+</html>

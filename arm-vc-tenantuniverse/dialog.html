@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configure — Tenant Universe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <link rel="stylesheet" href="dialog.css" />
+</head>
+<body>
+<div id="config-panel">
+
+  <div id="config-header">
+    <div>
+      <h2>Configure — Tenant Universe</h2>
+      <p class="header-sub">Map fields, set band thresholds, configure filters</p>
+    </div>
+    <button id="config-close" onclick="cancelConfig()">&#215;</button>
+  </div>
+
+  <div id="config-tabs">
+    <button class="ctab active" data-tab="data">Data</button>
+    <button class="ctab" data-tab="bands">Bands</button>
+    <button class="ctab" data-tab="filters">Filters</button>
+  </div>
+
+  <div id="config-body">
+
+    <!-- ── Tab: Data ── -->
+    <div class="tab-pane active" id="tab-data">
+
+      <div class="section-title">Worksheet</div>
+      <div class="field-group">
+        <label for="ws-source">Source worksheet</label>
+        <select id="ws-source">
+          <option value="">— select worksheet —</option>
+        </select>
+        <p class="field-hint">One row per store / lease record.</p>
+      </div>
+
+      <div class="section-title">Category fields</div>
+      <div class="field-group">
+        <label for="fld-category">Category <span style="color:var(--accent)">*</span></label>
+        <select id="fld-category"><option value="">—</option></select>
+        <p class="field-hint">Accordion groups by this field (e.g. F&amp;B, Fashion).</p>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="fld-active-leases">Active leases count</label>
+          <select id="fld-active-leases"><option value="">—</option></select>
+        </div>
+        <div class="field-group">
+          <label for="fld-cat-sqft">Category Sales / SqFt</label>
+          <select id="fld-cat-sqft"><option value="">—</option></select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="fld-cat-yoy">Category YoY growth</label>
+        <select id="fld-cat-yoy"><option value="">—</option></select>
+      </div>
+
+      <div class="section-title">Tenant fields</div>
+      <div class="field-group">
+        <label for="fld-tenant">Tenant name <span style="color:var(--accent)">*</span></label>
+        <select id="fld-tenant"><option value="">—</option></select>
+        <p class="field-hint">Tenant rows are grouped by this field within each category.</p>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="fld-sales-index">Sales index <span style="color:var(--accent)">*</span></label>
+          <select id="fld-sales-index"><option value="">—</option></select>
+        </div>
+        <div class="field-group">
+          <label for="fld-tenant-yoy">Tenant YoY growth <span style="color:var(--accent)">*</span></label>
+          <select id="fld-tenant-yoy"><option value="">—</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="fld-ocr">OCR (occupancy cost ratio)</label>
+          <select id="fld-ocr"><option value="">—</option></select>
+        </div>
+        <div class="field-group">
+          <label for="fld-status">Status badge field</label>
+          <select id="fld-status"><option value="">—</option></select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="fld-sales-current">Sales — current period (AED)</label>
+        <select id="fld-sales-current"><option value="">—</option></select>
+        <p class="field-hint">Actual sales value for the tenant, shown in AED millions.</p>
+      </div>
+      <div class="field-group">
+        <label for="inp-top-quartile-value">Top Quartile match value</label>
+        <input type="text" id="inp-top-quartile-value" value="TOP QUARTILE" placeholder="TOP QUARTILE" />
+        <p class="field-hint">Rows whose Status field equals this value are counted as Top Quartile.</p>
+      </div>
+
+      <div class="section-title">Store fields</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="fld-location">Location <span style="color:var(--accent)">*</span></label>
+          <select id="fld-location"><option value="">—</option></select>
+        </div>
+        <div class="field-group">
+          <label for="fld-level">Level / unit</label>
+          <select id="fld-level"><option value="">—</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="fld-lease-end">Lease end date</label>
+          <select id="fld-lease-end"><option value="">—</option></select>
+        </div>
+        <div class="field-group">
+          <label for="fld-sqm">Store area (sqm)</label>
+          <select id="fld-sqm"><option value="">—</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="fld-lease-value">Lease value (AED)</label>
+          <select id="fld-lease-value"><option value="">—</option></select>
+        </div>
+        <div class="field-group">
+          <label for="fld-store-status">Store status</label>
+          <select id="fld-store-status"><option value="">—</option></select>
+        </div>
+      </div>
+
+    </div><!-- /tab-data -->
+
+    <!-- ── Tab: Bands ── -->
+    <div class="tab-pane" id="tab-bands">
+
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5;">
+        Sales Index bars are colored based on these thresholds. A value of 100 = portfolio average.
+      </p>
+
+      <div class="band-row">
+        <div class="band-swatch" id="band-high-swatch" style="background:#2E7D32;"></div>
+        <span class="band-label">High performance</span>
+        <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">Sales Index ≥</span>
+        <input type="number" id="band-high-threshold" value="130" min="1" step="1" />
+        <span class="band-desc">Green</span>
+      </div>
+
+      <div class="band-row">
+        <div class="band-swatch" id="band-mid-swatch" style="background:#D4782F;"></div>
+        <span class="band-label">Medium performance</span>
+        <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">Sales Index ≥</span>
+        <input type="number" id="band-mid-threshold" value="100" min="0" step="1" />
+        <span class="band-desc">Orange</span>
+      </div>
+
+      <div class="band-row" style="opacity:.7;">
+        <div class="band-swatch" style="background:#C62828;"></div>
+        <span class="band-label">Low performance</span>
+        <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">Sales Index &lt; medium</span>
+        <span style="flex:0 0 80px;text-align:center;font-size:13px;color:var(--text-muted);">auto</span>
+        <span class="band-desc">Red</span>
+      </div>
+
+      <p style="font-size:11px;color:var(--text-muted);margin-top:14px;">
+        High threshold must be greater than Medium threshold.
+      </p>
+
+    </div><!-- /tab-bands -->
+
+    <!-- ── Tab: Filters ── -->
+    <div class="tab-pane" id="tab-filters">
+
+      <div class="section-title">Date filter</div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Enable date filter pill</div>
+          <div class="toggle-desc">Adds a date range pill to the filter bar.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="date-filter-enabled" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div id="date-filter-settings" style="display:none;margin-top:12px;">
+        <div class="field-row">
+          <div class="field-group">
+            <label for="date-filter-field">Date source field</label>
+            <select id="date-filter-field">
+              <option value="">— select field —</option>
+              <option value="leaseEndField">Lease End Date</option>
+            </select>
+            <p class="field-hint">Field whose values are filtered by the date range.</p>
+          </div>
+          <div class="field-group">
+            <label for="date-filter-label">Pill label</label>
+            <input type="text" id="date-filter-label" value="Date" placeholder="Date" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="date-filter-default">Default preset</label>
+          <select id="date-filter-default">
+            <option value="all">All Time</option>
+            <option value="last7">Last 7 days</option>
+            <option value="last14">Last 14 days</option>
+            <option value="last30">Last 30 days</option>
+            <option value="last60">Last 60 days</option>
+            <option value="last90">Last 90 days</option>
+            <option value="mtd">Month to Date</option>
+            <option value="qtd">Quarter to Date</option>
+            <option value="ytd">Year to Date</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:20px;">Category filters</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5;">
+        Add pill filters for dimension fields. Up to 6 filters. Users can multi-select values.
+      </p>
+
+      <div class="filter-list" id="filter-list"></div>
+
+      <div class="add-stage-row">
+        <button type="button" id="add-filter-btn">+ Add filter</button>
+      </div>
+
+    </div><!-- /tab-filters -->
+
+  </div><!-- /config-body -->
+
+  <div id="config-footer">
+    <button class="form-btn secondary" onclick="cancelConfig()">Cancel</button>
+    <button class="form-btn" id="save-btn" onclick="saveAndClose()">Save &amp; Close</button>
+  </div>
+
+</div>
+<script src="js/dialog.js"></script>
+</body>
+</html>

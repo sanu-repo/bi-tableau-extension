@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configure — Lease Pipeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <link rel="stylesheet" href="dialog.css" />
+</head>
+<body>
+<div id="config-panel">
+
+  <div id="config-header">
+    <div>
+      <h2>Configure — Lease Pipeline</h2>
+      <p class="header-sub">Map worksheets and fields to the three blocks</p>
+    </div>
+    <button id="config-close" onclick="cancelConfig()">&#215;</button>
+  </div>
+
+  <div id="config-tabs">
+    <button class="ctab active" data-tab="pipeline">Pipeline</button>
+    <button class="ctab" data-tab="risk">Risk Flags</button>
+    <button class="ctab" data-tab="stages">Stages</button>
+    <button class="ctab" data-tab="commercial">Commercial</button>
+    <button class="ctab" data-tab="display">Display</button>
+    <button class="ctab" data-tab="filters">Filters</button>
+  </div>
+
+  <div id="config-body">
+
+    <!-- ── Tab: Pipeline ─────────────────────────────────────────────────── -->
+    <div class="tab-pane active" id="tab-pipeline">
+      <div class="section-title">Worksheet</div>
+      <div class="field-group">
+        <label>Pipeline Worksheet <span style="color:var(--danger)">*</span></label>
+        <select id="ws-pipeline">
+          <option value="">— select worksheet —</option>
+        </select>
+        <div class="field-hint">The worksheet that feeds the Summary bar and Kanban board</div>
+      </div>
+
+      <div class="section-title">Core Fields</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Lease / Deal ID <span style="color:var(--danger)">*</span></label>
+          <select id="fld-leaseId"><option value="">— select field —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Pipeline Stage <span style="color:var(--danger)">*</span></label>
+          <select id="fld-stage"><option value="">— select field —</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Brand / Client Name <span style="color:var(--danger)">*</span></label>
+          <select id="fld-brand"><option value="">— select field —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Agent / Manager</label>
+          <select id="fld-manager"><option value="">— none —</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Deal Value / ACV</label>
+          <select id="fld-dealValue"><option value="">— none —</option></select>
+          <div class="field-hint">Raw numeric — auto-formatted (e.g. 4.2M)</div>
+        </div>
+        <div class="field-group">
+          <label>Unit GLA (sqm)</label>
+          <select id="fld-gla"><option value="">— none —</option></select>
+          <div class="field-hint">Gross leasable area — shown on card</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Status Badge</label>
+          <select id="fld-statusBadge"><option value="">— none —</option></select>
+          <div class="field-hint">Values: Stalled, Expired, At Risk, On Track</div>
+        </div>
+        <div class="field-group">
+          <label>Category</label>
+          <select id="fld-category"><option value="">— none —</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Location / Project</label>
+          <select id="fld-location"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+      <div class="section-title">Date Fields</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Stage Created Date</label>
+          <select id="fld-stageDate"><option value="">— none —</option></select>
+          <div class="field-hint">Used to find current stage and calculate days in stage</div>
+        </div>
+        <div class="field-group">
+          <label>Lease Created Date</label>
+          <select id="fld-leaseDate"><option value="">— none —</option></select>
+          <div class="field-hint">Used to calculate days since first contact</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Risk Flags ───────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-risk">
+      <div class="section-title">Worksheet</div>
+      <div class="field-group">
+        <label>Risk Flags Worksheet</label>
+        <select id="ws-risk">
+          <option value="">— none (omit risk strip) —</option>
+        </select>
+        <div class="field-hint">Separate pre-filtered sheet with one row per flagged deal. Leave blank to hide the Risk Flags strip.</div>
+      </div>
+
+      <div class="section-title">Field Mapping</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Lease / Deal ID</label>
+          <select id="rfld-leaseId"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Brand / Client Name <span style="color:var(--danger)">*</span></label>
+          <select id="rfld-brand"><option value="">— select field —</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Agent / Manager</label>
+          <select id="rfld-agent"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Pipeline Stage</label>
+          <select id="rfld-stage"><option value="">— none —</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Risk Type <span style="color:var(--danger)">*</span></label>
+          <select id="rfld-riskType"><option value="">— select field —</option></select>
+          <div class="field-hint">Values: Stalled, Expired, At Risk — drives badge colour</div>
+        </div>
+        <div class="field-group">
+          <label>Days Overdue</label>
+          <select id="rfld-daysOverdue"><option value="">— none —</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Deal Value</label>
+          <select id="rfld-dealValue"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Unit GLA (sqm)</label>
+          <select id="rfld-gla"><option value="">— none —</option></select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Location / Project</label>
+        <select id="rfld-location"><option value="">— none —</option></select>
+      </div>
+    </div>
+
+    <!-- ── Tab: Stages ──────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-stages">
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5;">
+        Define pipeline stages in order. These drive the Kanban columns and the modal timeline.
+        Use arrows to reorder or type to rename.
+      </p>
+      <button class="discover-btn" id="btn-discover">&#128269; Auto-discover from pipeline worksheet</button>
+      <div class="stage-list" id="stage-list"></div>
+      <div class="add-stage-row">
+        <input type="text" id="new-stage-name" placeholder="New stage name…" />
+        <button id="btn-add-stage">+ Add</button>
+      </div>
+    </div>
+
+    <!-- ── Tab: Commercial ──────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-commercial">
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5;">
+        These fields appear in the modal detail view under "Commercial Terms." All come from the Pipeline worksheet.
+      </p>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Rent PSM/YR</label>
+          <select id="fld-rent"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Term</label>
+          <select id="fld-term"><option value="">— none —</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Service Charge</label>
+          <select id="fld-serviceCharge"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Fit-out Period</label>
+          <select id="fld-fitout"><option value="">— none —</option></select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Indexation</label>
+        <select id="fld-indexation"><option value="">— none —</option></select>
+      </div>
+    </div>
+
+    <!-- ── Tab: Display ─────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-display">
+      <div class="section-title">Block Visibility</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Summary Bar</div>
+          <div class="toggle-desc">Total deals, pipeline ACV, and alert counts</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-summary" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Risk Flags Strip</div>
+          <div class="toggle-desc">Scrollable row of individual flagged deals</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-risk" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Kanban Board</div>
+          <div class="toggle-desc">Pipeline stage columns with deal cards</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-kanban" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="section-title">Board Options</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Sort Cards By</label>
+          <select id="sort-by">
+            <option value="dealValue">Deal Value (highest first)</option>
+            <option value="daysInStage">Days in Stage (longest first)</option>
+            <option value="daysSinceContact">Days Since First Contact (longest first)</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Currency Prefix</label>
+          <input type="text" id="currency" value="AED" placeholder="AED, USD, SAR…" maxlength="6" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Filters ─────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-filters">
+
+      <div class="section-title">Date Filter</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Enable Date Filter</div>
+          <div class="toggle-desc">Adds a date range pill to the filter bar above the dashboard</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="filter-date-enabled" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div id="date-filter-fields" style="display:none; padding-top:10px;">
+        <div class="field-group">
+          <label>Pill Label</label>
+          <input type="text" id="filter-date-label" placeholder="e.g. Stage Date" maxlength="20" />
+          <div class="field-hint">Text shown on the filter pill — e.g. "Stage Date: YTD"</div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Date Field</label>
+            <select id="filter-date-field">
+              <option value="stageCreatedDateField">Stage Created Date</option>
+              <option value="leaseCreatedDateField">Lease Created Date</option>
+            </select>
+            <div class="field-hint">Which date field the filter acts on</div>
+          </div>
+          <div class="field-group">
+            <label>Default Preset</label>
+            <select id="filter-date-default">
+              <option value="all">All Time</option>
+              <option value="mtd">Month to Date</option>
+              <option value="qtd">Quarter to Date</option>
+              <option value="ytd">Year to Date</option>
+              <option value="last30">Last 30 days</option>
+              <option value="last60">Last 60 days</option>
+              <option value="last90">Last 90 days</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Other Filters</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5;">
+        Add up to 6 filters to the filter bar. Each maps to a pipeline field and appears as a pill dropdown.
+      </p>
+      <div class="filter-list" id="filter-list"></div>
+      <div class="add-stage-row">
+        <button id="btn-add-filter">+ Add Filter</button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="config-footer">
+    <button class="form-btn secondary" onclick="cancelConfig()">Cancel</button>
+    <button class="form-btn" id="btn-save">Save &amp; Apply</button>
+  </div>
+
+</div>
+<script src="js/dialog.js"></script>
+</body>
+</html>

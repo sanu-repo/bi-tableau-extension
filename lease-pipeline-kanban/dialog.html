@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configure Kanban</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/dialog.css" />
+  <style>
+    /* Stage Manager Styles */
+    .stage-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+    .stage-item {
+      display: flex; align-items: center; gap: 8px;
+      background: #FAFAF8; border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 10px; font-size: 13px; transition: background 0.1s;
+    }
+    .stage-item:hover { background: #F0EDE8; }
+    .stage-item .grip {
+      cursor: grab; color: var(--text-muted); font-size: 16px; user-select: none;
+      line-height: 1; letter-spacing: -2px;
+    }
+    .stage-item .grip:active { cursor: grabbing; }
+    .stage-item .stage-num-badge {
+      width: 22px; height: 22px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .stage-item input {
+      flex: 1; border: none; background: transparent; font-size: 13px;
+      font-family: var(--font); color: var(--text-primary); outline: none;
+      padding: 2px 4px;
+    }
+    .stage-item input:focus { background: #fff; border-radius: 3px; }
+    .stage-item .move-btns { display: flex; flex-direction: column; gap: 0; }
+    .stage-item .move-btn {
+      background: none; border: none; cursor: pointer; color: var(--text-muted);
+      font-size: 11px; padding: 0 2px; line-height: 1;
+    }
+    .stage-item .move-btn:hover { color: var(--accent); }
+    .stage-item .del-btn {
+      background: none; border: none; cursor: pointer; color: var(--text-muted);
+      font-size: 16px; padding: 0 2px; line-height: 1;
+    }
+    .stage-item .del-btn:hover { color: var(--red); }
+    .stage-item.dragging { opacity: 0.4; background: #E3F2FD; }
+    .stage-item.drag-over { border-top: 2px solid var(--accent); }
+
+    .add-stage-row { display: flex; gap: 8px; }
+    .add-stage-row input {
+      flex: 1; padding: 6px 10px; font-size: 13px; border: 1px solid var(--border);
+      border-radius: 6px; font-family: var(--font);
+    }
+    .add-stage-row button {
+      padding: 6px 14px; font-size: 13px; border: 1px solid var(--accent);
+      background: #fff; color: var(--accent); border-radius: 6px; cursor: pointer;
+      font-weight: 600; font-family: var(--font);
+    }
+    .add-stage-row button:hover { background: var(--accent); color: #fff; }
+
+    .discover-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; font-size: 12px; border: 1px dashed var(--border);
+      background: none; color: var(--text-secondary); border-radius: 6px;
+      cursor: pointer; font-family: var(--font); margin-bottom: 12px;
+    }
+    .discover-btn:hover { border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <div class="dialog-header">
+    <h1>Configure Kanban</h1>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="core">Core Fields</button>
+    <button class="tab" data-tab="stages">Stages</button>
+    <button class="tab" data-tab="metrics">Metrics</button>
+    <button class="tab" data-tab="terms">Commercial Terms</button>
+    <button class="tab" data-tab="display">Display</button>
+  </div>
+
+  <!-- Tab: Core Fields -->
+  <div class="tab-content active" id="tab-core">
+    <div class="field-group">
+      <label class="field-label">Lease Identifier <span class="required">*</span></label>
+      <select id="fld-leaseId"><option value="">— select field —</option></select>
+      <div class="field-hint">Unique name or ID that identifies each lease deal</div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Stage Name <span class="required">*</span></label>
+      <select id="fld-stage"><option value="">— select field —</option></select>
+      <div class="field-hint">Column holding the pipeline stage (e.g. Qualification, Offered)</div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Brand / Title <span class="required">*</span></label>
+      <select id="fld-brand"><option value="">— select field —</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Location / Project</label>
+      <select id="fld-location"><option value="">— none —</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Category</label>
+      <select id="fld-category"><option value="">— none —</option></select>
+    </div>
+  </div>
+
+  <!-- Tab: Stages (manager) -->
+  <div class="tab-content" id="tab-stages">
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">
+      Define the pipeline stages in order. Drag or use arrows to reorder. These drive the kanban columns and the modal timeline.
+    </p>
+    <button class="discover-btn" id="btnDiscover">&#x1F50D; Auto-discover stages from data</button>
+    <div class="stage-list" id="stageList"></div>
+    <div class="add-stage-row">
+      <input type="text" id="newStageName" placeholder="New stage name..." />
+      <button id="btnAddStage">+ Add</button>
+    </div>
+  </div>
+
+  <!-- Tab: Metrics -->
+  <div class="tab-content" id="tab-metrics">
+    <div class="section-divider">Date Fields (auto-calculate days)</div>
+    <div class="field-group">
+      <label class="field-label">Stage Created Date <span class="required">*</span></label>
+      <select id="fld-stageCreatedDate"><option value="">— select field —</option></select>
+      <div class="field-hint">Date the lease entered each stage. Used to find the latest stage and calculate "days in stage."</div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Lease Created Date</label>
+      <select id="fld-leaseCreatedDate"><option value="">— none —</option></select>
+      <div class="field-hint">Date the lease was first created. Used to calculate "days since first contact."</div>
+    </div>
+
+    <div class="section-divider">People &amp; Status</div>
+    <div class="field-group">
+      <label class="field-label">Deal Value <span class="required">*</span></label>
+      <select id="fld-dealValue"><option value="">— select field —</option></select>
+      <div class="field-hint">Raw numeric value — auto-formatted (e.g. 4.2M)</div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Manager / Assigned Person</label>
+      <select id="fld-manager"><option value="">— none —</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Status Badge</label>
+      <select id="fld-statusBadge"><option value="">— none —</option></select>
+      <div class="field-hint">e.g. Stalled, Expired — shown as a coloured pill on cards</div>
+    </div>
+  </div>
+
+  <!-- Tab: Commercial Terms -->
+  <div class="tab-content" id="tab-terms">
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      These appear in the modal detail view under "Commercial Terms."
+    </p>
+    <div class="field-group">
+      <label class="field-label">Rent PSM/YR</label>
+      <select id="fld-rent"><option value="">— none —</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Term</label>
+      <select id="fld-term"><option value="">— none —</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Unit GLA Est</label>
+      <select id="fld-gla"><option value="">— none —</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Service Charge</label>
+      <select id="fld-serviceCharge"><option value="">— none —</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Fit-out Period</label>
+      <select id="fld-fitout"><option value="">— none —</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Indexation</label>
+      <select id="fld-indexation"><option value="">— none —</option></select>
+    </div>
+  </div>
+
+  <!-- Tab: Display -->
+  <div class="tab-content" id="tab-display">
+    <div class="field-group">
+      <label class="field-label">Sort Cards By</label>
+      <select id="set-sortBy">
+        <option value="dealValue">Deal Value (highest first)</option>
+        <option value="daysInStage">Days in Stage (longest first)</option>
+        <option value="daysSinceContact">Days Since First Contact (longest first)</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Currency Prefix</label>
+      <input type="text" id="set-currency" value="AED" placeholder="e.g. AED, USD, SAR" />
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="dialog-footer">
+    <button class="btn btn-secondary" id="btnCancel">Cancel</button>
+    <button class="btn btn-primary" id="btnSave">Save &amp; Apply</button>
+  </div>
+
+  <script src="lib/tableau.extensions.1.latest.min.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/dialog.js"></script>
+</body>
+</html>

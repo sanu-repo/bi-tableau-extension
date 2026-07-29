@@ -39,11 +39,31 @@
       font-size: 11px; font-weight: 500; color: #E65100; flex-shrink: 0;
     }
 
+    /* ── KPI cards ── */
+    #kpi-cards {
+      display: flex; flex-shrink: 0;
+      background: var(--surface); border-top: 3px solid var(--accent); border-bottom: 1px solid var(--border);
+    }
+    .kpi-card-item { flex: 1; min-width: 0; padding: 14px 20px; border-left: 1px solid var(--border); }
+    .kpi-card-item:first-child { border-left: none; }
+    .kpi-card-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--text-muted); margin-bottom: 6px;
+    }
+    .kpi-card-value { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.1; }
+    .kpi-card-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .kpi-card-delta { font-size: 12px; font-weight: 600; margin-top: 4px; line-height: 1.4; }
+    .kpi-card-delta.up   { color: #2E7D32; }
+    .kpi-card-delta.down { color: var(--danger); }
+
     /* ── Filter bar ── */
     #filter-bar {
-      display: flex; align-items: center; padding: 9px 20px;
+      display: flex; align-items: center; justify-content: space-between; padding: 9px 20px;
       gap: 10px; flex-shrink: 0; flex-wrap: wrap;
       background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .filter-bar-left, .filter-bar-right {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     }
     .filter-pill {
       display: inline-flex; align-items: center; gap: 5px;
@@ -65,7 +85,7 @@
       font-size: 10px; font-weight: 700; line-height: 1;
     }
     .filter-clear-btn {
-      margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
+      display: inline-flex; align-items: center; gap: 4px;
       padding: 5px 12px; background: transparent; border: 1px solid var(--border);
       border-radius: 20px; font-size: 12px; font-weight: 500; color: var(--text-muted);
       cursor: pointer; white-space: nowrap; font-family: var(--font);
@@ -177,7 +197,6 @@
       border-radius: 12px; font-size: 11px; font-weight: 600; letter-spacing: .03em;
       border: 1px solid; white-space: nowrap;
     }
-    .status-badge.tq       { background: #E8F5E9; color: #2E7D32; border-color: #A5D6A7; }
     .status-badge.watch    { background: #FFF3E0; color: #E65100; border-color: #FFCC80; }
     .status-badge.at-risk  { background: #FFEBEE; color: var(--danger); border-color: #EF9A9A; }
     .status-badge.generic  { background: var(--surface2); color: var(--text-muted); border-color: var(--border); }
@@ -280,9 +299,10 @@
   <div id="header">
     <div class="header-eyebrow">Existing Tenant Universe</div>
     <h1>Top performing tenants by category</h1>
-    <p class="header-subtitle">Sales index = sales per sqft vs portfolio average (100). YoY = 12-month rolling. OCR = occupancy cost ratio.</p>
+    <p class="header-subtitle">Sales index = sales per sqm vs portfolio average (100). YoY = 12-month rolling. OCR = occupancy cost ratio.</p>
   </div>
 
+  <div id="kpi-cards" style="display:none;"></div>
   <div id="data-cap-notice" style="display:none;"></div>
   <div id="filter-bar" style="display:none;"></div>
 
@@ -320,12 +340,22 @@
   var cfg = {
     sourceWorksheet: '',
     fieldMappings: {
-      categoryField: '', activeLeasesField: '', categorySqftField: '', categoryYoyField: '',
-      tenantField: '', salesIndexField: '', tenantYoyField: '', ocrField: '', statusField: '',
+      categoryField: '', categorySqftField: '', categoryYoyField: '',
+      tenantField: '', brandCodeField: '', tenantCodeField: '', tenantStatusField: '',
+      salesIndexField: '', tenantYoyField: '', ocrField: '', statusField: '',
       locationField: '', levelField: '', leaseEndField: '', sqmField: '', leaseValueField: '', storeStatusField: '',
-      salesCurrentPeriodField: '',
+      salesCurrentPeriodField: '', salesPerSqmField: '', salesPriorPeriodField: '', matRentField: '',
+      storeCountField: '',
     },
-    topQuartileValue: 'TOP QUARTILE',
+    columnLabels: {
+      tenantLabel: 'Tenant', locationLabel: 'Primary Location', salesIndexLabel: 'Sales Index',
+      salesCurrentLabel: 'Sales (AED)', salesPerSqmLabel: 'Sales/Sqm', yoyLabel: 'YoY Growth',
+      ocrLabel: 'OCR', storesLabel: 'Stores', statusLabel: 'Status',
+    },
+    columnVisibility: {
+      salesIndexVisible: true, salesCurrentVisible: true, salesPerSqmVisible: true,
+      yoyVisible: true, ocrVisible: true, storesVisible: true, statusVisible: true,
+    },
     bands: [
       { color: '#2E7D32', threshold: 130 },
       { color: '#D4782F', threshold: 100 },
@@ -333,6 +363,17 @@
     ],
     filterConfig: null,
   };
+
+  var activeSort = null;
+  var portfolioKpis = null;
+  var openCategories = {};
+
+  var SORT_METRICS = [
+    { key: 'salesCurrentPeriodField', prop: 'salesCurrentPeriod', label: 'By Sales' },
+    { key: 'salesPerSqmField',        prop: 'salesPerSqm',        label: 'By Sales/Sqm' },
+    { key: 'ocrField',                prop: 'ocr',                label: 'By OCR' },
+    { key: 'tenantYoyField',          prop: 'tenantYoy',          label: 'By YOY Growth' },
+  ];
 
   var MOCK_MODE = window.location.search.indexOf('mock') >= 0;
 
@@ -349,6 +390,7 @@
     { key: 'custom', label: 'Custom range…' },
   ];
 
+  var $kpiCards      = document.getElementById('kpi-cards');
   var $filterBar     = document.getElementById('filter-bar');
   var $dataCapNotice = document.getElementById('data-cap-notice');
   var $main          = document.getElementById('main');
@@ -382,7 +424,8 @@
       var all = tableau.extensions.settings.getAll();
       if (all.sourceWorksheet)  cfg.sourceWorksheet  = all.sourceWorksheet;
       if (all.fieldMappings)    cfg.fieldMappings    = JSON.parse(all.fieldMappings);
-      if (all.topQuartileValue) cfg.topQuartileValue = all.topQuartileValue;
+      if (all.columnLabels)     cfg.columnLabels     = JSON.parse(all.columnLabels);
+      if (all.columnVisibility) cfg.columnVisibility = JSON.parse(all.columnVisibility);
       if (all.bands)            cfg.bands            = JSON.parse(all.bands);
       if (all.filterConfig)     cfg.filterConfig     = JSON.parse(all.filterConfig);
     } catch (e) {}
@@ -437,6 +480,78 @@
     }
   }
 
+  // ── Portfolio KPI cards ───────────────────────────────────────────────────
+  function computePortfolioKpis(rows) {
+    var fld = cfg.fieldMappings;
+    var seenBrands = {}, seenLeases = {};
+    var activeBrandCount = 0, activeLeaseCount = 0;
+    var matSales = 0, priorSales = 0, matRent = 0, totalArea = 0;
+
+    rows.forEach(function (row) {
+      if (isActiveTenantStatus(fld, row)) {
+        // Active Brands = distinct Brand Code; falls back to tenant name if unmapped.
+        var brandKey = fld.brandCodeField ? normalizeTenantKey(row[fld.brandCodeField])
+          : (fld.tenantField ? normalizeTenantKey(row[fld.tenantField]) : '');
+        if (brandKey && !seenBrands[brandKey]) { seenBrands[brandKey] = true; activeBrandCount++; }
+
+        // Active Leases = distinct Tenant Code; falls back to counting every row if unmapped.
+        var leaseKey = fld.tenantCodeField ? normalizeTenantKey(row[fld.tenantCodeField]) : '';
+        if (leaseKey) {
+          if (!seenLeases[leaseKey]) { seenLeases[leaseKey] = true; activeLeaseCount++; }
+        } else {
+          activeLeaseCount++;
+        }
+      }
+
+      if (fld.salesCurrentPeriodField) matSales   += parseNumeric(row[fld.salesCurrentPeriodField]) || 0;
+      if (fld.salesPriorPeriodField)   priorSales += parseNumeric(row[fld.salesPriorPeriodField])   || 0;
+      if (fld.matRentField)            matRent    += parseNumeric(row[fld.matRentField])            || 0;
+      if (fld.sqmField)                totalArea  += parseNumeric(row[fld.sqmField])                || 0;
+    });
+
+    return {
+      activeBrandCount:  activeBrandCount,
+      activeLeaseCount:  activeLeaseCount,
+      matSales:          matSales,
+      priorSales:        priorSales,
+      yoyPct:            priorSales > 0 ? ((matSales - priorSales) / priorSales * 100) : null,
+      ocrPct:            matSales   > 0 ? (matRent / matSales * 100)                   : null,
+      avgSalesPerSqm:   totalArea  > 0 ? (matSales / totalArea)                       : null,
+    };
+  }
+
+  function renderKpiCards(k) {
+    $kpiCards.innerHTML = '';
+    $kpiCards.appendChild(kpiCardItem('Active Leases', k.activeLeaseCount.toLocaleString(), 'across portfolio'));
+    $kpiCards.appendChild(kpiCardItem('Active Brands', k.activeBrandCount.toLocaleString(), 'across portfolio'));
+
+    var matSalesCard = kpiCardItem('MAT Sales', formatValue(k.matSales), '');
+    if (k.yoyPct !== null) {
+      var isUp = k.yoyPct >= 0;
+      var delta = document.createElement('div');
+      delta.className = 'kpi-card-delta ' + (isUp ? 'up' : 'down');
+      delta.textContent = (isUp ? '▲ ' : '▼ ') + (isUp ? '+' : '') + k.yoyPct.toFixed(1) + '% vs Prior Period ' + formatValue(k.priorSales);
+      matSalesCard.appendChild(delta);
+    }
+    $kpiCards.appendChild(matSalesCard);
+
+    $kpiCards.appendChild(kpiCardItem('Portfolio OCR', k.ocrPct !== null ? k.ocrPct.toFixed(1) + '%' : '—', ''));
+    $kpiCards.appendChild(kpiCardItem('Avg Sales/Sqm', k.avgSalesPerSqm !== null ? formatValue(k.avgSalesPerSqm) : '—', ''));
+  }
+
+  function kpiCardItem(label, value, sub) {
+    var item = document.createElement('div');
+    item.className = 'kpi-card-item';
+    var lbl = document.createElement('div'); lbl.className = 'kpi-card-label'; lbl.textContent = label;
+    var val = document.createElement('div'); val.className = 'kpi-card-value'; val.textContent = value;
+    item.appendChild(lbl); item.appendChild(val);
+    if (sub) {
+      var subEl = document.createElement('div'); subEl.className = 'kpi-card-sub'; subEl.textContent = sub;
+      item.appendChild(subEl);
+    }
+    return item;
+  }
+
   // ── Group data ────────────────────────────────────────────────────────────
   function groupData(rows) {
     var fld = cfg.fieldMappings;
@@ -447,30 +562,51 @@
       if (!catMap[catName]) {
         catMap[catName] = {
           name: catName,
-          activeLeasesCount: fld.activeLeasesField ? (row[fld.activeLeasesField] || '') : '',
           categorySqft:      fld.categorySqftField ? (row[fld.categorySqftField] || '') : '',
           categoryYoy:       fld.categoryYoyField  ? (row[fld.categoryYoyField]  || '') : '',
           tenantMap: {}, tenantOrder: [],
+          leaseCodesSeen: {}, activeLeaseCount: 0,
+          activeBrandCodesSeen: {}, activeTenantCount: 0,
         };
         catOrder.push(catName);
       }
       var cat = catMap[catName];
-      var tenantName = (fld.tenantField && row[fld.tenantField]) ? row[fld.tenantField] : '(No Tenant)';
-      if (!cat.tenantMap[tenantName]) {
-        cat.tenantMap[tenantName] = {
+      var tenantRaw  = (fld.tenantField && row[fld.tenantField]) ? String(row[fld.tenantField]).trim() : '';
+      var tenantName = tenantRaw || '(No Tenant)';
+      var tenantKey  = tenantRaw ? normalizeTenantKey(tenantRaw) : '(NO TENANT)';
+      // Roster rows are grouped by Brand Code (one brand can have many leases/Tenant Codes); tenant name is display-only.
+      var brandKey = fld.brandCodeField ? normalizeTenantKey(row[fld.brandCodeField]) : tenantKey;
+      if (!cat.tenantMap[brandKey]) {
+        cat.tenantMap[brandKey] = {
           name:        tenantName,
           salesIndex:  fld.salesIndexField  ? (row[fld.salesIndexField]  || '') : '',
           tenantYoy:   fld.tenantYoyField   ? (row[fld.tenantYoyField]   || '') : '',
           ocr:         fld.ocrField         ? (row[fld.ocrField]         || '') : '',
           status:      fld.statusField      ? (row[fld.statusField]      || '') : '',
-          salesCurrentPeriod: fld.salesCurrentPeriodField ? (row[fld.salesCurrentPeriodField] || '') : '',
+          salesPerSqm: fld.salesPerSqmField ? (row[fld.salesPerSqmField] || '') : '',
+          storeCount:  fld.storeCountField  ? (row[fld.storeCountField]  || '') : '',
+          salesCurrentPeriod: 0,
           stores: [],
         };
-        cat.tenantOrder.push(tenantName);
+        cat.tenantOrder.push(brandKey);
+      }
+      // Sales — current period is a per-unit value, not duplicated per tenant, so it accumulates on every row.
+      if (fld.salesCurrentPeriodField) {
+        cat.tenantMap[brandKey].salesCurrentPeriod += parseNumeric(row[fld.salesCurrentPeriodField]) || 0;
+      }
+      // Active leases/tenants (Tenant Code / Brand Code, within category) only count rows with Tenant Status = Current.
+      if (isActiveTenantStatus(fld, row)) {
+        var leaseCode = fld.tenantCodeField ? normalizeTenantKey(row[fld.tenantCodeField]) : '';
+        if (leaseCode) {
+          if (!cat.leaseCodesSeen[leaseCode]) { cat.leaseCodesSeen[leaseCode] = true; cat.activeLeaseCount++; }
+        } else {
+          cat.activeLeaseCount++;
+        }
+        if (!cat.activeBrandCodesSeen[brandKey]) { cat.activeBrandCodesSeen[brandKey] = true; cat.activeTenantCount++; }
       }
       var loc = fld.locationField ? (row[fld.locationField] || '') : '';
       var lvl = fld.levelField    ? (row[fld.levelField]    || '') : '';
-      cat.tenantMap[tenantName].stores.push({
+      cat.tenantMap[brandKey].stores.push({
         location:    lvl ? loc + ' · ' + lvl : loc,
         leaseEnd:    fld.leaseEndField    ? (row[fld.leaseEndField]    || '') : '',
         sqm:         fld.sqmField        ? (row[fld.sqmField]        || '') : '',
@@ -479,19 +615,22 @@
       });
     });
 
-    var tqVal = (cfg.topQuartileValue || 'TOP QUARTILE').toUpperCase().trim();
     return catOrder.map(function (catName) {
       var cat = catMap[catName];
       var tenants = cat.tenantOrder.map(function (tn) { return cat.tenantMap[tn]; });
-      var tqCount = tenants.filter(function (t) {
-        return (t.status || '').toUpperCase().trim() === tqVal;
-      }).length;
+      if (activeSort) {
+        tenants = tenants.slice().sort(function (a, b) {
+          var av = parseNumeric(a[activeSort]); if (isNaN(av)) av = -Infinity;
+          var bv = parseNumeric(b[activeSort]); if (isNaN(bv)) bv = -Infinity;
+          return bv - av;
+        });
+      }
       return {
         name: cat.name,
-        activeLeasesCount: cat.activeLeasesCount,
+        activeLeaseCount:  cat.activeLeaseCount,
+        activeTenantCount: cat.activeTenantCount,
         categorySqft:      cat.categorySqft,
         categoryYoy:       cat.categoryYoy,
-        topQuartile:       tqCount + ' of ' + tenants.length,
         tenants:           tenants,
       };
     });
@@ -554,6 +693,8 @@
 
   function applyAndRender() {
     var filtered = applyFilters(rawRows);
+    portfolioKpis = computePortfolioKpis(filtered);
+    renderKpiCards(portfolioKpis);
     var grouped  = groupData(filtered);
     if (!grouped || grouped.length === 0) { showEmpty(); return; }
     showMainContent();
@@ -562,23 +703,45 @@
 
   // ── Filter bar ────────────────────────────────────────────────────────────
   function renderFilterBar() {
-    var fc      = cfg.filterConfig || {};
-    var hasDate = fc.dateFilter && fc.dateFilter.enabled;
-    var hasCats = fc.filters && fc.filters.length > 0;
-    if (!hasDate && !hasCats) { $filterBar.style.display = 'none'; return; }
+    var fc          = cfg.filterConfig || {};
+    var hasDate     = fc.dateFilter && fc.dateFilter.enabled;
+    var hasCats     = fc.filters && fc.filters.length > 0;
+    var sortMetrics = SORT_METRICS.filter(function (m) { return !!cfg.fieldMappings[m.key]; });
+    if (!hasDate && !hasCats && sortMetrics.length === 0) { $filterBar.style.display = 'none'; return; }
 
     closeDropdown();
     $filterBar.style.display = 'flex';
     $filterBar.innerHTML = '';
 
-    if (hasDate) $filterBar.appendChild(buildDatePill(fc.dateFilter));
-    (fc.filters || []).forEach(function (def) { $filterBar.appendChild(buildCategoryPill(def)); });
+    var left = document.createElement('div');
+    left.className = 'filter-bar-left';
+    if (hasDate) left.appendChild(buildDatePill(fc.dateFilter));
+    (fc.filters || []).forEach(function (def) { left.appendChild(buildCategoryPill(def)); });
+    if (hasDate || hasCats) {
+      var clearBtn = document.createElement('button');
+      clearBtn.className = 'filter-clear-btn';
+      clearBtn.innerHTML = '&#215; Clear all';
+      clearBtn.addEventListener('click', function () { initActiveFilters(); renderFilterBar(); applyAndRender(); });
+      left.appendChild(clearBtn);
+    }
+    $filterBar.appendChild(left);
 
-    var clearBtn = document.createElement('button');
-    clearBtn.className = 'filter-clear-btn';
-    clearBtn.innerHTML = '&#215; Clear all';
-    clearBtn.addEventListener('click', function () { initActiveFilters(); renderFilterBar(); applyAndRender(); });
-    $filterBar.appendChild(clearBtn);
+    var right = document.createElement('div');
+    right.className = 'filter-bar-right';
+    sortMetrics.forEach(function (m) { right.appendChild(buildSortButton(m)); });
+    $filterBar.appendChild(right);
+  }
+
+  function buildSortButton(metric) {
+    var btn = document.createElement('button');
+    btn.className = 'filter-pill' + (activeSort === metric.prop ? ' active' : '');
+    btn.textContent = metric.label;
+    btn.addEventListener('click', function () {
+      activeSort = (activeSort === metric.prop) ? null : metric.prop;
+      renderFilterBar();
+      applyAndRender();
+    });
+    return btn;
   }
 
   function buildDatePill(dateConfig) {
@@ -761,6 +924,7 @@
 
   // ── Render ────────────────────────────────────────────────────────────────
   function showEmpty() {
+    $kpiCards.style.display      = 'none';
     $dataCapNotice.style.display = 'none';
     $filterBar.style.display     = 'none';
     $main.style.display          = 'none';
@@ -769,6 +933,7 @@
 
   function showMainContent() {
     $emptyState.style.display = 'none';
+    $kpiCards.style.display   = 'flex';
     $main.style.display       = 'block';
   }
 
@@ -799,8 +964,8 @@
     var subEl = document.createElement('div');
     subEl.className = 'cat-sub';
     var subParts = [];
-    if (cat.activeLeasesCount) subParts.push(cat.activeLeasesCount + ' active leases');
-    subParts.push(cat.tenants.length + ' tracked ' + (cat.tenants.length === 1 ? 'tenant' : 'tenants'));
+    subParts.push(cat.activeLeaseCount + ' active ' + (cat.activeLeaseCount === 1 ? 'lease' : 'leases'));
+    subParts.push(cat.activeTenantCount + ' tracked ' + (cat.activeTenantCount === 1 ? 'tenant' : 'tenants'));
     subEl.textContent = subParts.join(' · ');
     nameWrap.appendChild(nameEl);
     nameWrap.appendChild(subEl);
@@ -808,13 +973,12 @@
 
     var kpisEl = document.createElement('div');
     kpisEl.className = 'cat-kpis';
-    if (cat.categorySqft) kpisEl.appendChild(buildCatKpi('Sales / SqFt', cat.categorySqft, ''));
+    if (cat.categorySqft) kpisEl.appendChild(buildCatKpi('Sales / Sqm', cat.categorySqft, ''));
     if (cat.categoryYoy) {
-      var yoyNum = parseFloat(cat.categoryYoy);
+      var yoyNum = parseNumeric(cat.categoryYoy);
       var yoyCls = isNaN(yoyNum) ? '' : (yoyNum >= 0 ? 'yoy-pos' : 'yoy-neg');
       kpisEl.appendChild(buildCatKpi('YoY Growth', cat.categoryYoy, yoyCls));
     }
-    kpisEl.appendChild(buildCatKpi('Top Quartile', cat.topQuartile, ''));
     catRow.appendChild(kpisEl);
 
     var rosterBtn = document.createElement('button');
@@ -828,9 +992,10 @@
     rosterWrap.style.display = 'none';
     catBlock.appendChild(rosterWrap);
 
-    var isOpen = false;
+    var isOpen = !!openCategories[cat.name];
     function toggleRoster() {
       isOpen = !isOpen;
+      openCategories[cat.name] = isOpen;
       chevron.classList.toggle('open', isOpen);
       rosterBtn.textContent = isOpen ? 'Hide roster' : 'Show roster';
       if (isOpen) {
@@ -843,6 +1008,13 @@
     }
     catRow.addEventListener('click', toggleRoster);
     rosterBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleRoster(); });
+
+    if (isOpen) {
+      chevron.classList.add('open');
+      rosterBtn.textContent = 'Hide roster';
+      renderRosterTable(cat, rosterWrap);
+      rosterWrap.style.display = 'block';
+    }
   }
 
   function buildCatKpi(label, value, valueClass) {
@@ -856,23 +1028,29 @@
 
   function renderRosterTable(cat, container) {
     var fld = cfg.fieldMappings;
-    var showYoy         = !!fld.tenantYoyField;
-    var showOcr         = !!fld.ocrField;
-    var showStatus      = !!fld.statusField;
-    var showSalesCurrent = !!fld.salesCurrentPeriodField;
+    var lbl = cfg.columnLabels;
+    var vis = cfg.columnVisibility || {};
+    var showSalesIndex   = vis.salesIndexVisible   !== false;
+    var showYoy          = !!fld.tenantYoyField          && vis.yoyVisible          !== false;
+    var showOcr          = !!fld.ocrField                && vis.ocrVisible          !== false;
+    var showStatus       = !!fld.statusField             && vis.statusVisible       !== false;
+    var showSalesCurrent = !!fld.salesCurrentPeriodField && vis.salesCurrentVisible !== false;
+    var showSalesPerSqm  = !!fld.salesPerSqmField        && vis.salesPerSqmVisible  !== false;
+    var showStores       = vis.storesVisible !== false;
 
     var table = document.createElement('table');
     table.className = 'roster-table';
 
     var thHtml = '<tr>' +
-      '<th>Tenant</th>' +
-      '<th>Primary Location</th>' +
-      '<th>Sales Index</th>' +
-      (showSalesCurrent ? '<th>Sales (AED)</th>' : '') +
-      (showYoy    ? '<th>YoY Growth</th>' : '') +
-      (showOcr    ? '<th>OCR</th>'        : '') +
-      '<th>Stores</th>' +
-      (showStatus ? '<th>Status</th>'     : '') +
+      '<th>' + esc(lbl.tenantLabel) + '</th>' +
+      '<th>' + esc(lbl.locationLabel) + '</th>' +
+      (showSalesIndex ? '<th>' + esc(lbl.salesIndexLabel) + '</th>' : '') +
+      (showSalesCurrent ? '<th>' + esc(lbl.salesCurrentLabel) + '</th>' : '') +
+      (showSalesPerSqm  ? '<th>' + esc(lbl.salesPerSqmLabel) + '</th>' : '') +
+      (showYoy    ? '<th>' + esc(lbl.yoyLabel) + '</th>' : '') +
+      (showOcr    ? '<th>' + esc(lbl.ocrLabel) + '</th>' : '') +
+      (showStores ? '<th>' + esc(lbl.storesLabel) + '</th>' : '') +
+      (showStatus ? '<th>' + esc(lbl.statusLabel) + '</th>' : '') +
       '</tr>';
     var thead = document.createElement('thead');
     thead.innerHTML = thHtml;
@@ -882,10 +1060,10 @@
     cat.tenants.forEach(function (tenant) {
       var tr = document.createElement('tr');
       var primaryLoc = tenant.stores.length > 0 ? tenant.stores[0].location : '';
-      var siNum   = parseFloat(tenant.salesIndex);
+      var siNum   = parseNumeric(tenant.salesIndex);
       var barPct  = isNaN(siNum) ? 0 : Math.min(siNum / BAR_SCALE * 100, 100);
       var barColor = getSalesIndexColor(siNum);
-      var yoyNum  = parseFloat(tenant.tenantYoy);
+      var yoyNum  = parseNumeric(tenant.tenantYoy);
       var yoyCls  = isNaN(yoyNum) ? '' : (yoyNum >= 0 ? 'yoy-pos' : 'yoy-neg');
 
       var tdStatus = '';
@@ -900,17 +1078,22 @@
         tdStatus = '<td>' + statusHtml + '</td>';
       }
 
+      var tdSalesIndex = showSalesIndex
+        ? '<td><div class="sales-bar-wrap">' +
+            '<div class="sales-bar-track"><div class="sales-bar-fill" style="width:' + barPct.toFixed(1) + '%;background:' + barColor + ';"></div></div>' +
+            '<span class="sales-index-num">' + (isNaN(siNum) ? '—' : Math.round(siNum)) + '</span>' +
+          '</div></td>'
+        : '';
+
       tr.innerHTML =
         '<td><span class="tenant-name-cell">' + esc(tenant.name) + '</span></td>' +
         '<td><span class="location-cell">' + esc(primaryLoc) + '</span></td>' +
-        '<td><div class="sales-bar-wrap">' +
-          '<div class="sales-bar-track"><div class="sales-bar-fill" style="width:' + barPct.toFixed(1) + '%;background:' + barColor + ';"></div></div>' +
-          '<span class="sales-index-num">' + (isNaN(siNum) ? '—' : Math.round(siNum)) + '</span>' +
-        '</div></td>' +
+        tdSalesIndex +
         (showSalesCurrent ? '<td>' + esc(formatValue(tenant.salesCurrentPeriod)) + '</td>' : '') +
+        (showSalesPerSqm  ? '<td>' + esc(tenant.salesPerSqm || '—') + '</td>' : '') +
         (showYoy ? '<td><span class="' + (yoyCls || '') + '">' + esc(tenant.tenantYoy || '—') + '</span></td>' : '') +
         (showOcr ? '<td>' + esc(tenant.ocr || '—') + '</td>' : '') +
-        '<td>' + tenant.stores.length + '</td>' +
+        (showStores ? '<td>' + esc(String(tenant.storeCount || tenant.stores.length)) + '</td>' : '') +
         tdStatus;
 
       tr.addEventListener('click', function () { openTenantModal(tenant); });
@@ -931,8 +1114,6 @@
 
   function getStatusBadgeClass(status) {
     var s = (status || '').toUpperCase().trim();
-    var tqVal = (cfg.topQuartileValue || 'TOP QUARTILE').toUpperCase().trim();
-    if (s === tqVal)     return 'tq';
     if (s === 'WATCH')   return 'watch';
     if (s === 'AT RISK') return 'at-risk';
     return '';
@@ -940,15 +1121,15 @@
 
   // ── Tenant modal ──────────────────────────────────────────────────────────
   function openTenantModal(tenant) {
-    var siNum   = parseFloat(tenant.salesIndex);
-    var yoyNum  = parseFloat(tenant.tenantYoy);
+    var siNum   = parseNumeric(tenant.salesIndex);
+    var yoyNum  = parseNumeric(tenant.tenantYoy);
     var yoyStyle = isNaN(yoyNum) ? '' : (yoyNum >= 0 ? 'color:#2E7D32' : 'color:var(--danger)');
 
     var kpiTiles = [
       kpiTile('Sales Index', isNaN(siNum) ? '—' : Math.round(siNum), 'vs portfolio 100', true),
       '<div class="kpi-tile"><div class="kpi-label">YOY GROWTH</div><div class="kpi-value"' + (yoyStyle ? ' style="' + yoyStyle + '"' : '') + '>' + esc(tenant.tenantYoy || '—') + '</div></div>',
       kpiTile('OCR', tenant.ocr || '—', ''),
-      kpiTile('Stores', String(tenant.stores.length), ''),
+      kpiTile('Stores', String(tenant.storeCount || tenant.stores.length), ''),
     ];
     if (cfg.fieldMappings.salesCurrentPeriodField) {
       kpiTiles.push(kpiTile('Sales (AED)', formatValue(tenant.salesCurrentPeriod), ''));
@@ -1010,8 +1191,29 @@
   function modalBackdropClick(e) { if (e.target === $modal) closeTenantModal(); }
   function modalEscHandler(e)    { if (e.key === 'Escape') closeTenantModal(); }
 
+  // Values come through as Tableau's formattedValue (e.g. "1,234", "AED 1,234", "12.4%"),
+  // so plain parseFloat truncates at the first comma or fails outright on a currency prefix.
+  function parseNumeric(raw) {
+    if (raw === null || raw === undefined || raw === '') return NaN;
+    var cleaned = String(raw).replace(/[^0-9.\-]/g, '');
+    if (cleaned === '' || cleaned === '-' || cleaned === '.') return NaN;
+    return parseFloat(cleaned);
+  }
+
+  // Collapses whitespace/case variants of the same tenant name ("Starbucks", " Starbucks ", "STARBUCKS")
+  // so they aren't counted or grouped as distinct tenants.
+  function normalizeTenantKey(name) {
+    return String(name || '').trim().replace(/\s+/g, ' ').toUpperCase();
+  }
+
+  // Gates Active Leases / Active Brands / Tracked Tenants counting. No Tenant Status mapped => count everything.
+  function isActiveTenantStatus(fld, row) {
+    if (!fld.tenantStatusField) return true;
+    return normalizeTenantKey(row[fld.tenantStatusField]) === 'CURRENT';
+  }
+
   function formatValue(raw) {
-    var n = parseFloat(raw);
+    var n = parseNumeric(raw);
     if (isNaN(n)) return raw || '—';
     if (n >= 1e9) return 'AED ' + (n / 1e9).toFixed(1) + 'B';
     if (n >= 1e6) return 'AED ' + (n / 1e6).toFixed(1) + 'M';
@@ -1022,17 +1224,22 @@
   // ── Mock data (dev preview via ?mock URL param) ───────────────────────────
   function loadMockData() {
     cfg.sourceWorksheet  = 'mock';
-    cfg.topQuartileValue = 'TOP QUARTILE';
     cfg.bands = [
       { color: '#2E7D32', threshold: 130 },
       { color: '#D4782F', threshold: 100 },
       { color: '#C62828', threshold: 0   },
     ];
+    cfg.filterConfig = {
+      dateFilter: { enabled: false },
+      filters: [{ id: 'mock-loc', field: 'locationField', label: 'Location', type: 'multi' }],
+    };
     cfg.fieldMappings = {
       categoryField:     'Category',
-      activeLeasesField: 'Active Leases',
       categorySqftField: 'Cat Sales/SqFt',
       categoryYoyField:  'Cat YoY',
+      brandCodeField:    'Brand Code',
+      tenantCodeField:   'Tenant Code',
+      tenantStatusField: 'Tenant Status',
       tenantField:       'Tenant',
       salesIndexField:   'Sales Index',
       tenantYoyField:    'Tenant YoY',
@@ -1045,6 +1252,10 @@
       leaseValueField:   'Lease Value',
       storeStatusField:  'Store Status',
       salesCurrentPeriodField: 'Sales Current',
+      salesPerSqmField: 'Sales/Sqm',
+      salesPriorPeriodField: 'Sales Prior',
+      matRentField: 'MAT Rent',
+      storeCountField: 'Store Count',
     };
 
     rawRows = [
@@ -1077,6 +1288,29 @@
       { Category:'Health & Beauty', 'Active Leases':'22', 'Cat Sales/SqFt':'AED 2,410', 'Cat YoY':'+2.8%', Tenant:'GNC',                'Sales Index':'79',  'Sales Current':'4740000', 'Tenant YoY':'-6.1%',  OCR:'13.4%',Status:'AT RISK',      Location:'World Trade Ctr', Level:'GF', 'Lease End':'Apr 2025', SQM:'80',  'Lease Value':'640,000',   'Store Status':'Inactive' },
     ];
 
+    rawRows.forEach(function (row) {
+      var sales = parseFloat(row['Sales Current']) || 0;
+      var yoy   = parseFloat(row['Tenant YoY']) || 0;
+      var ocr   = parseFloat(row.OCR) || 0;
+      var sqm   = parseFloat(row.SQM) || 0;
+      row['Sales Prior'] = String(Math.round(sales / (1 + yoy / 100)));
+      row['MAT Rent']    = String(Math.round(sales * ocr / 100));
+      row['Sales/Sqm']   = sqm ? (sales / sqm).toFixed(0) : '';
+    });
+
+    var storeCounts = {};
+    rawRows.forEach(function (row) { storeCounts[row.Tenant] = (storeCounts[row.Tenant] || 0) + 1; });
+    rawRows.forEach(function (row) { row['Store Count'] = String(storeCounts[row.Tenant]); });
+
+    var brandCodes = {}, brandSeq = 1;
+    rawRows.forEach(function (row, i) {
+      if (!brandCodes[row.Tenant]) brandCodes[row.Tenant] = 'BR' + String(brandSeq++).padStart(3, '0');
+      row['Brand Code']  = brandCodes[row.Tenant];
+      row['Tenant Code'] = 'TC' + String(i + 1).padStart(4, '0');
+      // Demo a couple of expired leases so the Tenant Status filter has something to exclude.
+      row['Tenant Status'] = row.Status === 'AT RISK' ? 'Expired' : 'Current';
+    });
+
     var mockBanner = document.createElement('div');
     mockBanner.style.cssText = 'background:#EDE9FE;border-bottom:1px solid #C4B5FD;padding:5px 20px;font-size:11px;font-weight:600;color:#6D28D9;flex-shrink:0;display:flex;align-items:center;gap:6px;';
     mockBanner.innerHTML = '&#9641; Mock data preview — open in Tableau Desktop for live data';
@@ -1084,6 +1318,7 @@
 
     checkDataCap();
     initActiveFilters();
+    renderFilterBar();
     applyAndRender();
   }
 

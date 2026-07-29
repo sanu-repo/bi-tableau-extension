@@ -3,21 +3,39 @@
 
   var FIELD_MAPPING_KEYS = [
     { id: 'fld-category',      key: 'categoryField' },
-    { id: 'fld-active-leases', key: 'activeLeasesField' },
     { id: 'fld-cat-sqft',      key: 'categorySqftField' },
     { id: 'fld-cat-yoy',       key: 'categoryYoyField' },
     { id: 'fld-tenant',        key: 'tenantField' },
+    { id: 'fld-brand-code',    key: 'brandCodeField' },
+    { id: 'fld-tenant-code',   key: 'tenantCodeField' },
+    { id: 'fld-tenant-status', key: 'tenantStatusField' },
     { id: 'fld-sales-index',   key: 'salesIndexField' },
     { id: 'fld-tenant-yoy',    key: 'tenantYoyField' },
     { id: 'fld-ocr',           key: 'ocrField' },
     { id: 'fld-status',        key: 'statusField' },
     { id: 'fld-sales-current', key: 'salesCurrentPeriodField' },
+    { id: 'fld-sales-per-sqm', key: 'salesPerSqmField' },
+    { id: 'fld-sales-prior',   key: 'salesPriorPeriodField' },
+    { id: 'fld-mat-rent',      key: 'matRentField' },
     { id: 'fld-location',      key: 'locationField' },
     { id: 'fld-level',         key: 'levelField' },
     { id: 'fld-lease-end',     key: 'leaseEndField' },
     { id: 'fld-sqm',           key: 'sqmField' },
     { id: 'fld-lease-value',   key: 'leaseValueField' },
     { id: 'fld-store-status',  key: 'storeStatusField' },
+    { id: 'fld-store-count',   key: 'storeCountField' },
+  ];
+
+  var COLUMN_LABEL_KEYS = [
+    { id: 'lbl-tenant',        key: 'tenantLabel',       def: 'Tenant' },
+    { id: 'lbl-location',      key: 'locationLabel',     def: 'Primary Location' },
+    { id: 'lbl-sales-index',   key: 'salesIndexLabel',   def: 'Sales Index',   visId: 'vis-sales-index',   visKey: 'salesIndexVisible' },
+    { id: 'lbl-sales-current', key: 'salesCurrentLabel', def: 'Sales (AED)',   visId: 'vis-sales-current', visKey: 'salesCurrentVisible' },
+    { id: 'lbl-sales-per-sqm', key: 'salesPerSqmLabel',  def: 'Sales/Sqm',     visId: 'vis-sales-per-sqm', visKey: 'salesPerSqmVisible' },
+    { id: 'lbl-yoy',           key: 'yoyLabel',          def: 'YoY Growth',    visId: 'vis-yoy',           visKey: 'yoyVisible' },
+    { id: 'lbl-ocr',           key: 'ocrLabel',          def: 'OCR',           visId: 'vis-ocr',           visKey: 'ocrVisible' },
+    { id: 'lbl-stores',        key: 'storesLabel',       def: 'Stores',        visId: 'vis-stores',        visKey: 'storesVisible' },
+    { id: 'lbl-status',        key: 'statusLabel',       def: 'Status',        visId: 'vis-status',        visKey: 'statusVisible' },
   ];
 
   var FILTER_FIELDS = [
@@ -123,8 +141,6 @@
       loadCols(all.sourceWorksheet);
     }
 
-    if (all.topQuartileValue) setVal('inp-top-quartile-value', all.topQuartileValue);
-
     if (all.fieldMappings) {
       try {
         var fm = JSON.parse(all.fieldMappings);
@@ -139,6 +155,22 @@
               sel.value = fm[item.key];
             }
           }
+        });
+      } catch (e) {}
+    }
+
+    if (all.columnLabels) {
+      try {
+        var cl = JSON.parse(all.columnLabels);
+        COLUMN_LABEL_KEYS.forEach(function (item) { setVal(item.id, cl[item.key] || item.def); });
+      } catch (e) {}
+    }
+
+    if (all.columnVisibility) {
+      try {
+        var cv = JSON.parse(all.columnVisibility);
+        COLUMN_LABEL_KEYS.forEach(function (item) {
+          if (item.visId) setCheck(item.visId, cv[item.visKey] !== false);
         });
       } catch (e) {}
     }
@@ -178,17 +210,14 @@
   function addFilterRow(evt, existing) {
     if (filterRows.length >= MAX_FILTERS) return;
     var id = 'fr-' + (++filterIdSeq);
-    var row = { id: id };
+    var row = {
+      id:    id,
+      field: (existing && existing.field) || '',
+      label: (existing && existing.label) || '',
+      type:  (existing && existing.type)  || 'multi',
+    };
     filterRows.push(row);
     renderFilterList();
-    if (existing) {
-      var fieldSel = document.getElementById('ff-field-' + id);
-      var labelInp = document.getElementById('ff-label-' + id);
-      var typeSel  = document.getElementById('ff-type-' + id);
-      if (fieldSel && existing.field) fieldSel.value = existing.field;
-      if (labelInp && existing.label) labelInp.value = existing.label;
-      if (typeSel  && existing.type)  typeSel.value  = existing.type;
-    }
     document.getElementById('add-filter-btn').disabled = filterRows.length >= MAX_FILTERS;
   }
 
@@ -208,6 +237,8 @@
 
       var labelInp = document.createElement('input');
       labelInp.type = 'text'; labelInp.id = 'ff-label-' + row.id; labelInp.placeholder = 'Label (e.g. Category)';
+      labelInp.value = row.label || '';
+      labelInp.addEventListener('input', function () { row.label = labelInp.value; });
 
       var fieldSel = document.createElement('select');
       fieldSel.id = 'ff-field-' + row.id;
@@ -217,6 +248,8 @@
         var opt = document.createElement('option'); opt.value = f.value; opt.textContent = f.label;
         fieldSel.appendChild(opt);
       });
+      fieldSel.value = row.field || '';
+      fieldSel.addEventListener('change', function () { row.field = fieldSel.value; });
 
       var typeSel = document.createElement('select');
       typeSel.id = 'ff-type-' + row.id;
@@ -224,6 +257,8 @@
         var opt = document.createElement('option'); opt.value = pair[0]; opt.textContent = pair[1];
         typeSel.appendChild(opt);
       });
+      typeSel.value = row.type || 'multi';
+      typeSel.addEventListener('change', function () { row.type = typeSel.value; });
 
       var delBtn = document.createElement('button');
       delBtn.className = 'del-btn'; delBtn.type = 'button'; delBtn.textContent = '×';
@@ -251,6 +286,12 @@
     var fm = {};
     FIELD_MAPPING_KEYS.forEach(function (item) { fm[item.key] = getVal(item.id); });
 
+    var cl = {};
+    COLUMN_LABEL_KEYS.forEach(function (item) { cl[item.key] = getVal(item.id).trim() || item.def; });
+
+    var cv = {};
+    COLUMN_LABEL_KEYS.forEach(function (item) { if (item.visKey) cv[item.visKey] = getCheck(item.visId); });
+
     var bands = [
       { color: '#2E7D32', threshold: highT, label: 'High' },
       { color: '#D4782F', threshold: midT,  label: 'Medium' },
@@ -268,22 +309,20 @@
       filters: [],
     };
     filterRows.forEach(function (row) {
-      var field = document.getElementById('ff-field-' + row.id);
-      var label = document.getElementById('ff-label-' + row.id);
-      var type  = document.getElementById('ff-type-'  + row.id);
-      if (field && field.value) {
+      if (row.field) {
         fc.filters.push({
           id:    row.id,
-          field: field.value,
-          label: (label && label.value) ? label.value : field.value,
-          type:  type ? type.value : 'multi',
+          field: row.field,
+          label: row.label || row.field,
+          type:  row.type || 'multi',
         });
       }
     });
 
     tableau.extensions.settings.set('sourceWorksheet',  ws);
-    tableau.extensions.settings.set('topQuartileValue', getVal('inp-top-quartile-value') || 'TOP QUARTILE');
     tableau.extensions.settings.set('fieldMappings',    JSON.stringify(fm));
+    tableau.extensions.settings.set('columnLabels',     JSON.stringify(cl));
+    tableau.extensions.settings.set('columnVisibility', JSON.stringify(cv));
     tableau.extensions.settings.set('bands',            JSON.stringify(bands));
     tableau.extensions.settings.set('filterConfig',     JSON.stringify(fc));
 

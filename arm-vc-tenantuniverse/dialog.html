@@ -24,6 +24,7 @@
     <button class="ctab active" data-tab="data">Data</button>
     <button class="ctab" data-tab="bands">Bands</button>
     <button class="ctab" data-tab="filters">Filters</button>
+    <button class="ctab" data-tab="columns">Columns</button>
   </div>
 
   <div id="config-body">
@@ -48,24 +49,37 @@
       </div>
       <div class="field-row">
         <div class="field-group">
-          <label for="fld-active-leases">Active leases count</label>
-          <select id="fld-active-leases"><option value="">—</option></select>
-        </div>
-        <div class="field-group">
-          <label for="fld-cat-sqft">Category Sales / SqFt</label>
+          <label for="fld-cat-sqft">Category Sales / Sqm</label>
           <select id="fld-cat-sqft"><option value="">—</option></select>
         </div>
-      </div>
-      <div class="field-group">
-        <label for="fld-cat-yoy">Category YoY growth</label>
-        <select id="fld-cat-yoy"><option value="">—</option></select>
+        <div class="field-group">
+          <label for="fld-cat-yoy">Category YoY growth</label>
+          <select id="fld-cat-yoy"><option value="">—</option></select>
+        </div>
       </div>
 
       <div class="section-title">Tenant fields</div>
       <div class="field-group">
         <label for="fld-tenant">Tenant name <span style="color:var(--accent)">*</span></label>
         <select id="fld-tenant"><option value="">—</option></select>
-        <p class="field-hint">Tenant rows are grouped by this field within each category.</p>
+        <p class="field-hint">Display name shown in the roster. Rows are grouped by Brand Code below, not by this name.</p>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="fld-brand-code">Brand Code</label>
+          <select id="fld-brand-code"><option value="">—</option></select>
+          <p class="field-hint">Groups leases into one roster row per brand. Falls back to Tenant name if unmapped.</p>
+        </div>
+        <div class="field-group">
+          <label for="fld-tenant-code">Tenant Code</label>
+          <select id="fld-tenant-code"><option value="">—</option></select>
+          <p class="field-hint">Unique per lease. Drives Active Leases counts. Falls back to counting rows if unmapped.</p>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="fld-tenant-status">Tenant Status</label>
+        <select id="fld-tenant-status"><option value="">—</option></select>
+        <p class="field-hint">Only rows with value "Current" count toward Active Leases / Active Brands / Tracked Tenants. Leave unmapped to count everything.</p>
       </div>
       <div class="field-row">
         <div class="field-group">
@@ -93,9 +107,22 @@
         <p class="field-hint">Actual sales value for the tenant, shown in AED millions.</p>
       </div>
       <div class="field-group">
-        <label for="inp-top-quartile-value">Top Quartile match value</label>
-        <input type="text" id="inp-top-quartile-value" value="TOP QUARTILE" placeholder="TOP QUARTILE" />
-        <p class="field-hint">Rows whose Status field equals this value are counted as Top Quartile.</p>
+        <label for="fld-sales-per-sqm">Sales / Sqm (AED)</label>
+        <select id="fld-sales-per-sqm"><option value="">—</option></select>
+        <p class="field-hint">Used for the "By Sales/Sqm" sort button.</p>
+      </div>
+
+      <div class="section-title">Portfolio KPI fields</div>
+      <p class="field-hint" style="margin-top:-6px;margin-bottom:10px;">Feed the portfolio-wide KPI cards. These are per-unit values, summed across every row (not deduped per tenant).</p>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="fld-sales-prior">Sales — prior period (AED)</label>
+          <select id="fld-sales-prior"><option value="">—</option></select>
+        </div>
+        <div class="field-group">
+          <label for="fld-mat-rent">MAT Rent (AED)</label>
+          <select id="fld-mat-rent"><option value="">—</option></select>
+        </div>
       </div>
 
       <div class="section-title">Store fields</div>
@@ -128,6 +155,11 @@
           <label for="fld-store-status">Store status</label>
           <select id="fld-store-status"><option value="">—</option></select>
         </div>
+      </div>
+      <div class="field-group">
+        <label for="fld-store-count">Store count</label>
+        <select id="fld-store-count"><option value="">—</option></select>
+        <p class="field-hint">Number of stores/units for the tenant. If left unmapped, falls back to counting rows per tenant.</p>
       </div>
 
     </div><!-- /tab-data -->
@@ -228,6 +260,82 @@
       </div>
 
     </div><!-- /tab-filters -->
+
+    <!-- ── Tab: Columns ── -->
+    <div class="tab-pane" id="tab-columns">
+
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5;">
+        Rename the roster table's column headers, and show/hide each column. Tenant and Primary Location always stay visible.
+        Hiding a column doesn't affect its sort button or KPI calculations — display only.
+      </p>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label for="lbl-tenant">Tenant</label>
+          <input type="text" id="lbl-tenant" value="Tenant" placeholder="Tenant" />
+        </div>
+        <div class="field-group">
+          <label for="lbl-location">Primary Location</label>
+          <input type="text" id="lbl-location" value="Primary Location" placeholder="Primary Location" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="lbl-sales-index" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Sales Index</span>
+            <input type="checkbox" id="vis-sales-index" checked style="margin:0;" />
+          </label>
+          <input type="text" id="lbl-sales-index" value="Sales Index" placeholder="Sales Index" />
+        </div>
+        <div class="field-group">
+          <label for="lbl-sales-current" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Sales (AED)</span>
+            <input type="checkbox" id="vis-sales-current" checked style="margin:0;" />
+          </label>
+          <input type="text" id="lbl-sales-current" value="Sales (AED)" placeholder="Sales (AED)" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="lbl-sales-per-sqm" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Sales/Sqm</span>
+            <input type="checkbox" id="vis-sales-per-sqm" checked style="margin:0;" />
+          </label>
+          <input type="text" id="lbl-sales-per-sqm" value="Sales/Sqm" placeholder="Sales/Sqm" />
+        </div>
+        <div class="field-group">
+          <label for="lbl-yoy" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>YoY Growth</span>
+            <input type="checkbox" id="vis-yoy" checked style="margin:0;" />
+          </label>
+          <input type="text" id="lbl-yoy" value="YoY Growth" placeholder="YoY Growth" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="lbl-ocr" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>OCR</span>
+            <input type="checkbox" id="vis-ocr" checked style="margin:0;" />
+          </label>
+          <input type="text" id="lbl-ocr" value="OCR" placeholder="OCR" />
+        </div>
+        <div class="field-group">
+          <label for="lbl-stores" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Stores</span>
+            <input type="checkbox" id="vis-stores" checked style="margin:0;" />
+          </label>
+          <input type="text" id="lbl-stores" value="Stores" placeholder="Stores" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="lbl-status" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Status</span>
+          <input type="checkbox" id="vis-status" checked style="margin:0;" />
+        </label>
+        <input type="text" id="lbl-status" value="Status" placeholder="Status" />
+      </div>
+
+    </div><!-- /tab-columns -->
 
   </div><!-- /config-body -->
 

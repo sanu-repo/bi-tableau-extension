@@ -64,6 +64,10 @@
     .kpi-count.success { color: var(--success); }
     .kpi-count.danger  { color: var(--danger); }
     .kpi-sub { font-size: 12px; color: var(--text-muted); }
+    .kpi-card { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+    .kpi-card:hover:not(.active) { border-color: #c9c2b8; }
+    .kpi-card.active { border-color: var(--accent); box-shadow: inset 0 -3px 0 0 var(--accent); }
+    .kpi-card.active .kpi-label { color: var(--accent); }
 
     /* ── Bottom section ── */
     .bottom-section { display: grid; grid-template-columns: 1fr 320px; gap: 14px; flex: 1; min-height: 0; }
@@ -260,11 +264,11 @@
   <div id="filter-bar" style="display:none;"></div>
 
   <div id="main" style="display:none;">
-    <div class="kpi-grid" id="kpi-grid"></div>
+    <div class="kpi-grid" id="kpi-grid" role="tablist"></div>
     <div class="bottom-section">
       <div class="exits-panel">
         <div class="panel-header">
-          <div class="panel-header-label">Confirmed Exits &middot; Next 6 Months</div>
+          <div class="panel-header-label" id="exits-panel-label"></div>
           <h3 id="exits-subtitle"></h3>
         </div>
         <div class="exits-table-wrap">
@@ -303,7 +307,7 @@
 
   <div id="empty-state">
     <h2>ARM Value Chain — Renewals &amp; Termination</h2>
-    <p>Configure the extension to connect a worksheet and map your fields.</p>
+    <p id="empty-state-msg">Configure the extension to connect a worksheet and map your fields.</p>
     <button id="empty-config-btn">Configure Extension</button>
   </div>
 
@@ -321,10 +325,11 @@
 (function () {
 
   var tableauReady  = false;
+  var activeTileIndex = 0;
   var tileRows      = [[], [], [], []];
   var rawRows       = [];
   var activeFilters = {};
-  var exitsSort     = { key: 'exitdate', dir: 'asc' };
+  var exitsSort     = { key: 'col0', dir: 'asc' };
 
   var MAX_ROWS = 50000;
 
@@ -352,44 +357,66 @@
   var MOCK_CFG = {
     tiles: [
       { label: 'Up for Renewal · 6MO', color: 'neutral', worksheet: 'Mock-Renewal',
-        leaseCodeField: 'Lease Code', acvField: 'ACV' },
+        leaseCodeField: 'Lease Code', acvField: 'ACV',
+        columns: [
+          { label: 'Tenant',       field: 'Tenant',        type: 'text' },
+          { label: 'Renewal Due',  field: 'Renewal Date',  type: 'date', remaining: true },
+        ] },
       { label: 'In Negotiation',       color: 'accent',  worksheet: 'Mock-Negotiation',
-        leaseCodeField: 'Lease Code', acvField: 'ACV' },
+        leaseCodeField: 'Lease Code', acvField: 'ACV',
+        columns: [
+          { label: 'Tenant', field: 'Tenant',            type: 'text' },
+          { label: 'Stage',  field: 'Negotiation Stage', type: 'text' },
+        ] },
       { label: 'Renewed (Signed)',     color: 'success', worksheet: 'Mock-Renewed',
-        leaseCodeField: 'Lease Code', acvField: 'ACV' },
+        leaseCodeField: 'Lease Code', acvField: 'ACV',
+        columns: [
+          { label: 'Tenant',      field: 'Tenant',       type: 'text' },
+          { label: 'Signed Date', field: 'Signed Date',  type: 'date' },
+        ] },
       { label: 'Confirmed Exits',      color: 'danger',  worksheet: 'Mock-Exits',
         leaseCodeField: 'Lease Code', acvField: 'ACV',
-        tenantField: 'Tenant', assetField: 'Asset', exitDateField: 'Exit Date',
-        sourceField: 'Source', reasonField: 'Reason' },
+        columns: [
+          { label: 'Tenant',    field: 'Tenant',    type: 'text' },
+          { label: 'Asset',     field: 'Asset',     type: 'text' },
+          { label: 'Exit Date', field: 'Exit Date', type: 'date', remaining: true },
+          { label: 'ACV',       field: 'ACV',       type: 'currency' },
+          { label: 'Source',    field: 'Source',    type: 'source' },
+          { label: 'Reason',    field: 'Reason',    type: 'text' },
+        ] },
     ],
     filterConfig: {
-      dateFilter:   { enabled: true, field: 'exitDateField', label: 'Exit Date', defaultPreset: 'all' },
-      assetFilter:  { enabled: true },
-      tenantFilter: { enabled: true },
+      tiles: [
+        {},
+        {},
+        {},
+        { dateFilter: { enabled: true, label: 'Exit Date', defaultPreset: 'all' },
+          categoryFilters: [ { enabled: true, columnIndex: 1 }, { enabled: true, columnIndex: 0 } ] },
+      ],
     },
-    displayConfig: { showExitSplit: true, hiddenColumns: [] },
+    displayConfig: { showExitSplit: true, showRemaining: true },
   };
 
   var MOCK_TILE_ROWS = [
     [ // tile 0 — Up for Renewal
-      { 'Lease Code': 'LC-001', ACV: '6250000' },
-      { 'Lease Code': 'LC-002', ACV: '4720000' },
-      { 'Lease Code': 'LC-003', ACV: '580000'  },
-      { 'Lease Code': 'LC-004', ACV: '1980000' },
-      { 'Lease Code': 'LC-005', ACV: '9400000' },
+      { 'Lease Code': 'LC-001', ACV: '6250000', Tenant: 'Sephora',      'Renewal Date': '2026-09-10' },
+      { 'Lease Code': 'LC-002', ACV: '4720000', Tenant: 'Nike',         'Renewal Date': '2026-08-22' },
+      { 'Lease Code': 'LC-003', ACV: '580000',  Tenant: 'Aldo',         'Renewal Date': '2026-11-05' },
+      { 'Lease Code': 'LC-004', ACV: '1980000', Tenant: 'Costa Coffee', 'Renewal Date': '2026-08-30' },
+      { 'Lease Code': 'LC-005', ACV: '9400000', Tenant: 'Carrefour',    'Renewal Date': '2027-01-15' },
     ],
     [ // tile 1 — In Negotiation
-      { 'Lease Code': 'LC-006', ACV: '8600000' },
-      { 'Lease Code': 'LC-007', ACV: '3050000' },
-      { 'Lease Code': 'LC-008', ACV: '470000'  },
-      { 'Lease Code': 'LC-009', ACV: '5100000' },
+      { 'Lease Code': 'LC-006', ACV: '8600000', Tenant: 'Zara',            'Negotiation Stage': 'Term Sheet Sent' },
+      { 'Lease Code': 'LC-007', ACV: '3050000', Tenant: 'H&M',             'Negotiation Stage': 'Under Legal Review' },
+      { 'Lease Code': 'LC-008', ACV: '470000',  Tenant: 'The Body Shop',   'Negotiation Stage': 'Awaiting Tenant Response' },
+      { 'Lease Code': 'LC-009', ACV: '5100000', Tenant: 'Virgin Megastore','Negotiation Stage': 'Term Sheet Sent' },
     ],
     [ // tile 2 — Renewed
-      { 'Lease Code': 'LC-010', ACV: '5850000' },
-      { 'Lease Code': 'LC-011', ACV: '3720000' },
-      { 'Lease Code': 'LC-012', ACV: '720000'  },
-      { 'Lease Code': 'LC-013', ACV: '1340000' },
-      { 'Lease Code': 'LC-014', ACV: '2610000' },
+      { 'Lease Code': 'LC-010', ACV: '5850000', Tenant: 'Mothercare',   'Signed Date': '2026-06-12' },
+      { 'Lease Code': 'LC-011', ACV: '3720000', Tenant: 'Pottery Barn', 'Signed Date': '2026-05-28' },
+      { 'Lease Code': 'LC-012', ACV: '720000',  Tenant: 'Aldo',         'Signed Date': '2026-07-01' },
+      { 'Lease Code': 'LC-013', ACV: '1340000', Tenant: 'Sephora',      'Signed Date': '2026-04-18' },
+      { 'Lease Code': 'LC-014', ACV: '2610000', Tenant: 'Nike',         'Signed Date': '2026-06-30' },
     ],
     [ // tile 3 — Confirmed Exits (full fields)
       { 'Lease Code': 'LC-E01', Tenant: 'Sephora',         Asset: 'Yas Mall',           'Exit Date': '2026-08-15', ACV: '2450000', Source: 'Tenant-initiated',   Reason: 'Brand consolidation'       },
@@ -406,7 +433,8 @@
   function renderMockPreview() {
     cfg      = MOCK_CFG;
     tileRows = MOCK_TILE_ROWS.slice();
-    rawRows  = tileRows[3];
+    activeTileIndex = 0;
+    rawRows  = tileRows[activeTileIndex] || [];
     $dataCapNotice.style.display = 'none';
     initActiveFilters();
     renderFilterBar();
@@ -415,15 +443,70 @@
 
   var cfg = {
     tiles: [
-      { label: '', color: 'neutral', worksheet: '', leaseCodeField: '', acvField: '' },
-      { label: '', color: 'accent',  worksheet: '', leaseCodeField: '', acvField: '' },
-      { label: '', color: 'success', worksheet: '', leaseCodeField: '', acvField: '' },
-      { label: '', color: 'danger',  worksheet: '', leaseCodeField: '', acvField: '',
-        tenantField: '', assetField: '', exitDateField: '', sourceField: '', reasonField: '' },
+      { label: '', color: 'neutral', worksheet: '', leaseCodeField: '', acvField: '', columns: [] },
+      { label: '', color: 'accent',  worksheet: '', leaseCodeField: '', acvField: '', columns: [] },
+      { label: '', color: 'success', worksheet: '', leaseCodeField: '', acvField: '', columns: [] },
+      { label: '', color: 'danger',  worksheet: '', leaseCodeField: '', acvField: '', columns: [] },
     ],
-    filterConfig:  null,
+    filterConfig:  { tiles: [{}, {}, {}, {}] },
     displayConfig: null,
   };
+
+  // ── Settings migration (old fixed-field schema → flexible per-tile columns) ─
+
+  function migrateSettings(rawTiles, rawFilterConfig) {
+    var migratedTiles = (rawTiles || []).map(function (tile) {
+      tile = tile || {};
+      var hasLegacyFields = tile.tenantField || tile.assetField || tile.exitDateField ||
+                             tile.sourceField || tile.reasonField;
+      if ((!tile.columns || !tile.columns.length) && hasLegacyFields) {
+        var cols = [];
+        if (tile.tenantField)   cols.push({ label: 'Tenant', field: tile.tenantField,   type: 'text' });
+        if (tile.assetField)    cols.push({ label: 'Asset',  field: tile.assetField,    type: 'text' });
+        if (tile.exitDateField) cols.push({ label: 'Date',   field: tile.exitDateField, type: 'date', remaining: true });
+        if (tile.sourceField)   cols.push({ label: 'Source', field: tile.sourceField,   type: 'source' });
+        if (tile.reasonField)   cols.push({ label: 'Reason', field: tile.reasonField,   type: 'text' });
+        tile.columns = cols;
+      } else if (!tile.columns) {
+        tile.columns = [];
+      }
+      return tile;
+    });
+    while (migratedTiles.length < 4) {
+      migratedTiles.push({ label: '', color: 'neutral', worksheet: '', leaseCodeField: '', acvField: '', columns: [] });
+    }
+
+    var fc = rawFilterConfig || {};
+    if (!fc.tiles) {
+      var newFcTiles = [0, 1, 2, 3].map(function () {
+        return {
+          dateFilter: { enabled: false, label: 'Date', defaultPreset: 'all' },
+          categoryFilters: [ { enabled: false, columnIndex: -1 }, { enabled: false, columnIndex: -1 } ],
+        };
+      });
+      if (fc.dateFilter || fc.assetFilter || fc.tenantFilter) {
+        var legacyCols = (migratedTiles[3] || {}).columns || [];
+        var findIdx = function (label) {
+          for (var i = 0; i < legacyCols.length; i++) { if (legacyCols[i].label === label) return i; }
+          return -1;
+        };
+        newFcTiles[3] = {
+          dateFilter: {
+            enabled:       !!(fc.dateFilter && fc.dateFilter.enabled),
+            label:         (fc.dateFilter && fc.dateFilter.label) || 'Date',
+            defaultPreset: (fc.dateFilter && fc.dateFilter.defaultPreset) || 'all',
+          },
+          categoryFilters: [
+            { enabled: !!(fc.assetFilter  && fc.assetFilter.enabled),  columnIndex: findIdx('Asset')  },
+            { enabled: !!(fc.tenantFilter && fc.tenantFilter.enabled), columnIndex: findIdx('Tenant') },
+          ],
+        };
+      }
+      fc.tiles = newFcTiles;
+    }
+
+    return { tiles: migratedTiles, filterConfig: fc };
+  }
 
   // ── Init ───────────────────────────────────────────────────────────────────
 
@@ -437,12 +520,16 @@
       tableauReady = true;
 
       var mode = tableau.extensions.environment.mode;
-      if (!mode || mode === 'authoring') {
+      var $emptyConfigBtn = document.getElementById('empty-config-btn');
+      var $emptyConfigMsg = document.getElementById('empty-state-msg');
+      if (mode === 'authoring') {
         $gearBtn.hidden = false;
         $gearBtn.addEventListener('click', openConfig);
+        $emptyConfigBtn.addEventListener('click', openConfig);
+      } else {
+        $emptyConfigBtn.style.display = 'none';
+        $emptyConfigMsg.textContent = 'This extension has not been configured yet. Contact your dashboard author.';
       }
-
-      document.getElementById('empty-config-btn').addEventListener('click', openConfig);
 
       tableau.extensions.settings.addEventListener(
         tableau.TableauEventType.SettingsChanged,
@@ -461,14 +548,18 @@
     try {
       var all = tableau.extensions.settings.getAll();
       if (all.sourceWorksheet && !all.tiles) return; // old format — force reconfiguration
-      if (all.tiles)         cfg.tiles         = JSON.parse(all.tiles);
-      if (all.filterConfig)  cfg.filterConfig  = JSON.parse(all.filterConfig);
+      var rawTiles        = all.tiles        ? JSON.parse(all.tiles)        : cfg.tiles;
+      var rawFilterConfig = all.filterConfig  ? JSON.parse(all.filterConfig) : null;
+      var migrated = migrateSettings(rawTiles, rawFilterConfig);
+      cfg.tiles        = migrated.tiles;
+      cfg.filterConfig = migrated.filterConfig;
       if (all.displayConfig) cfg.displayConfig = JSON.parse(all.displayConfig);
     } catch (e) {}
   }
 
   function openConfig() {
     if (!tableauReady) return;
+    if (!tableau.extensions.environment || tableau.extensions.environment.mode !== 'authoring') return;
     var url = window.location.href.replace(/\/[^\/]*$/, '/dialog.html');
     tableau.extensions.ui.displayDialogAsync(url, '', { height: 680, width: 620 })
       .then(function (result) {
@@ -496,8 +587,8 @@
     });
     Promise.all(promises).then(function (results) {
       tileRows = results;
-      rawRows  = tileRows[3];
-      checkDataCap(tileRows[3]);
+      rawRows  = tileRows[activeTileIndex] || [];
+      checkDataCap(tileRows[activeTileIndex] || []);
       initActiveFilters();
       renderFilterBar();
       applyAndRender();
@@ -533,6 +624,7 @@
   // ── Render ─────────────────────────────────────────────────────────────────
 
   function renderMain() {
+    rawRows = tileRows[activeTileIndex] || [];
     var filteredExits = applyFilters(rawRows);
     renderKPIs(tileRows);
     renderExitsTable(filteredExits);
@@ -540,9 +632,37 @@
     applyDisplayConfig();
   }
 
+  function setActiveTile(idx) {
+    if (idx === activeTileIndex) return;
+    activeTileIndex = idx;
+    rawRows = tileRows[activeTileIndex] || [];
+    var tile = cfg.tiles[activeTileIndex] || {};
+    exitsSort = { key: findRemainingColumn(tile) ? 'remaining' : 'col0', dir: 'asc' };
+    initActiveFilters();
+    renderFilterBar();
+    renderMain();
+  }
+
+  function findColumnByType(tile, type) {
+    var cols = (tile && tile.columns) || [];
+    for (var i = 0; i < cols.length; i++) {
+      if (cols[i].type === type) return cols[i];
+    }
+    return null;
+  }
+
+  function findRemainingColumn(tile) {
+    var cols = (tile && tile.columns) || [];
+    for (var i = 0; i < cols.length; i++) {
+      if (cols[i].type === 'date' && cols[i].remaining) return cols[i];
+    }
+    return null;
+  }
+
   function applyDisplayConfig() {
     var dc = cfg.displayConfig || {};
-    var showSplit = dc.showExitSplit !== false;
+    var activeTile = cfg.tiles[activeTileIndex] || {};
+    var showSplit  = dc.showExitSplit !== false && !!findColumnByType(activeTile, 'source');
     var donutEl  = document.querySelector('.donut-panel');
     var bottomEl = document.querySelector('.bottom-section');
     if (donutEl)  donutEl.style.display = showSplit ? '' : 'none';
@@ -563,10 +683,11 @@
 
       var subtitle = formatACV(totalACV);
 
-      if (i === 3 && tile.sourceField) {
+      var srcCol = findColumnByType(tile, 'source');
+      if (srcCol) {
         var llCount = 0, tlCount = 0;
         rows.forEach(function (r) {
-          var src = String(r[tile.sourceField] || '').toLowerCase();
+          var src = String(r[srcCol.field] || '').toLowerCase();
           if (src.indexOf('landlord') >= 0) llCount++;
           else if (src.indexOf('tenant') >= 0) tlCount++;
         });
@@ -574,74 +695,82 @@
       }
 
       var card = document.createElement('div');
-      card.className = 'kpi-card';
+      card.className = 'kpi-card' + (i === activeTileIndex ? ' active' : '');
+      card.setAttribute('role', 'tab');
+      card.setAttribute('aria-selected', i === activeTileIndex ? 'true' : 'false');
+      card.tabIndex = 0;
       card.innerHTML =
         '<div class="kpi-label">' + escHtml(tile.label || 'Tile ' + (i + 1)) + '</div>' +
         '<div class="kpi-count ' + tile.color + '">' + count + '</div>' +
         '<div class="kpi-sub">' + escHtml(subtitle) + '</div>';
+      card.addEventListener('click', function () { setActiveTile(i); });
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveTile(i); }
+      });
       $grid.appendChild(card);
     });
   }
 
-  function renderExitsTable(rows) {
-    var fm = cfg.tiles[3] || {};
-    var dc = cfg.displayConfig || {};
-    var hiddenCols = dc.hiddenColumns || [];
+  function buildColDef(colDef, idx) {
+    var key = 'col' + idx;
+    var field = colDef.field;
 
-    var COLS = [
-      {
-        key: 'tenant', label: 'Tenant',
-        sortValue: function (row) { return String(row[fm.tenantField] || '').toLowerCase(); },
+    if (colDef.type === 'date') {
+      return {
+        key: key, label: colDef.label,
+        sortValue: function (row) { return new Date(row[field]).getTime(); },
+        renderTd: function (row) { return '<td class="col-date">' + formatDate(row[field]) + '</td>'; }
+      };
+    }
+    if (colDef.type === 'currency') {
+      return {
+        key: key, label: colDef.label,
+        sortValue: function (row) { return parseFloat(row[field]); },
         renderTd: function (row) {
-          return '<td class="col-tenant">' + escHtml(row[fm.tenantField] || '—') + '</td>';
+          var raw = parseFloat(row[field]);
+          return '<td class="col-acv">' + (isNaN(raw) ? '—' : formatACV(raw)) + '</td>';
         }
-      },
-      {
-        key: 'asset', label: 'Asset',
-        sortValue: function (row) { return String(row[fm.assetField] || '').toLowerCase(); },
+      };
+    }
+    if (colDef.type === 'source') {
+      return {
+        key: key, label: colDef.label,
+        sortValue: function (row) { return String(row[field] || '').toLowerCase(); },
         renderTd: function (row) {
-          return '<td>' + escHtml(row[fm.assetField] || '—') + '</td>';
-        }
-      },
-      {
-        key: 'exitdate', label: 'Exit Date',
-        sortValue: function (row) { return new Date(row[fm.exitDateField]).getTime(); },
-        renderTd: function (row) {
-          return '<td class="col-date">' + formatDate(row[fm.exitDateField]) + '</td>';
-        }
-      },
-      {
-        key: 'acv', label: 'ACV',
-        sortValue: function (row) { return parseFloat(row[fm.acvField]); },
-        renderTd: function (row) {
-          var acvRaw = parseFloat(row[fm.acvField]);
-          return '<td class="col-acv">' + (isNaN(acvRaw) ? '—' : formatACV(acvRaw)) + '</td>';
-        }
-      },
-      {
-        key: 'source', label: 'Source',
-        sortValue: function (row) { return String(row[fm.sourceField] || '').toLowerCase(); },
-        renderTd: function (row) {
-          var src      = String(row[fm.sourceField] || '');
+          var src      = String(row[field] || '');
           var srcLower = src.toLowerCase();
           var badgeCls = srcLower.indexOf('landlord') >= 0 ? 'landlord'
                        : srcLower.indexOf('tenant')   >= 0 ? 'tenant'
                        : 'other';
           return '<td><span class="source-badge ' + badgeCls + '">' + escHtml(src || '—') + '</span></td>';
         }
-      },
-      {
-        key: 'reason', label: 'Reason',
-        sortValue: function (row) { return String(row[fm.reasonField] || '').toLowerCase(); },
-        renderTd: function (row) {
-          return '<td>' + escHtml(row[fm.reasonField] || '—') + '</td>';
-        }
-      },
-      {
+      };
+    }
+    return { // 'text' default
+      key: key, label: colDef.label,
+      sortValue: function (row) { return String(row[field] || '').toLowerCase(); },
+      renderTd: function (row) { return '<td class="col-tenant">' + escHtml(row[field] || '—') + '</td>'; }
+    };
+  }
+
+  function renderExitsTable(rows) {
+    var tile = cfg.tiles[activeTileIndex] || {};
+    var dc   = cfg.displayConfig || {};
+    var showRemaining = dc.showRemaining !== false;
+    var columns = tile.columns || [];
+
+    document.getElementById('exits-panel-label').textContent =
+      tile.label || ('Tile ' + (activeTileIndex + 1));
+
+    var COLS = columns.map(function (colDef, idx) { return buildColDef(colDef, idx); });
+
+    var remainingCol = findRemainingColumn(tile);
+    if (remainingCol && showRemaining) {
+      COLS.push({
         key: 'remaining', label: 'Remaining',
-        sortValue: function (row) { return calcRemainingDays(row[fm.exitDateField]); },
+        sortValue: function (row) { return calcRemainingDays(row[remainingCol.field]); },
         renderTd: function (row) {
-          var remaining = calcRemainingDays(row[fm.exitDateField]);
+          var remaining = calcRemainingDays(row[remainingCol.field]);
           var remText, remCls = '';
           if (remaining === null) {
             remText = '—';
@@ -654,18 +783,28 @@
           }
           return '<td class="col-rem ' + remCls + '">' + remText + '</td>';
         }
-      },
-    ];
+      });
+    }
 
-    var visibleCols = COLS.filter(function (c) { return hiddenCols.indexOf(c.key) < 0; });
+    var currencyCols = columns.filter(function (c) { return c.type === 'currency'; });
+    var subtitle = rows.length + (rows.length === 1 ? ' row' : ' rows');
+    if (currencyCols.length) {
+      var totalVal = rows.reduce(function (sum, r) {
+        return sum + (parseFloat(r[currencyCols[0].field]) || 0);
+      }, 0);
+      subtitle += ' · ' + formatACV(totalVal) + ' ' + currencyCols[0].label.toLowerCase();
+    }
+    document.getElementById('exits-subtitle').textContent = subtitle;
 
-    var totalACV = rows.reduce(function (sum, r) {
-      return sum + (parseFloat(r[fm.acvField]) || 0);
-    }, 0);
-    document.getElementById('exits-subtitle').textContent =
-      rows.length + ' leases ending · ' + formatACV(totalACV) + ' annual rent';
+    if (COLS.length === 0) {
+      document.getElementById('exits-thead').innerHTML = '';
+      document.getElementById('exits-tbody').innerHTML =
+        '<tr><td style="padding:16px;color:var(--text-muted);">No columns configured for this tile yet. ' +
+        'Add columns in the extension\'s Configure dialog.</td></tr>';
+      return;
+    }
 
-    var activeCol = COLS.filter(function (c) { return c.key === exitsSort.key; })[0] || COLS[2];
+    var activeCol = COLS.filter(function (c) { return c.key === exitsSort.key; })[0] || COLS[0];
     var sorted = rows.slice().sort(function (a, b) {
       var av = activeCol.sortValue(a);
       var bv = activeCol.sortValue(b);
@@ -679,18 +818,18 @@
     });
 
     document.getElementById('exits-thead').innerHTML =
-      '<tr>' + visibleCols.map(function (c) {
+      '<tr>' + COLS.map(function (c) {
         var arrow = c.key === exitsSort.key
           ? ' <span class="sort-arrow">' + (exitsSort.dir === 'asc' ? '▲' : '▼') + '</span>'
           : '';
-        return '<th class="sortable-th" data-sort-key="' + c.key + '">' + c.label + arrow + '</th>';
+        return '<th class="sortable-th" data-sort-key="' + c.key + '">' + escHtml(c.label) + arrow + '</th>';
       }).join('') + '</tr>';
 
     var $tbody = document.getElementById('exits-tbody');
     $tbody.innerHTML = '';
     sorted.forEach(function (row) {
       var tr = document.createElement('tr');
-      tr.innerHTML = visibleCols.map(function (c) { return c.renderTd(row); }).join('');
+      tr.innerHTML = COLS.map(function (c) { return c.renderTd(row); }).join('');
       $tbody.appendChild(tr);
     });
   }
@@ -709,8 +848,9 @@
   });
 
   function renderDonut(rows) {
-    var fm   = cfg.tiles[3] || {};
-    var sfld = fm.sourceField;
+    var tile   = cfg.tiles[activeTileIndex] || {};
+    var srcCol = findColumnByType(tile, 'source');
+    var sfld   = srcCol ? srcCol.field : null;
 
     var tenantCount = 0, landlordCount = 0;
     if (sfld) {
@@ -805,35 +945,37 @@
   // ── Filter state ───────────────────────────────────────────────────────────
 
   function initActiveFilters() {
-    var fc = cfg.filterConfig || {};
+    var ft = ((cfg.filterConfig || {}).tiles || [])[activeTileIndex] || {};
     activeFilters = {};
-    if (fc.dateFilter && fc.dateFilter.enabled) {
-      activeFilters.date = { preset: fc.dateFilter.defaultPreset || 'all', from: '', to: '' };
+    if (ft.dateFilter && ft.dateFilter.enabled) {
+      activeFilters.date = { preset: ft.dateFilter.defaultPreset || 'all', from: '', to: '' };
     }
-    if (fc.assetFilter  && fc.assetFilter.enabled)  activeFilters.asset  = [];
-    if (fc.tenantFilter && fc.tenantFilter.enabled) activeFilters.tenant = [];
+    (ft.categoryFilters || []).forEach(function (catDef, slotIdx) {
+      if (catDef.enabled) activeFilters['cat' + slotIdx] = [];
+    });
   }
 
   function applyFilters(rows) {
-    var fc = cfg.filterConfig || {};
-    var fm = cfg.tiles[3] || {};
-    var out = rows;
+    var tile = cfg.tiles[activeTileIndex] || {};
+    var ft   = ((cfg.filterConfig || {}).tiles || [])[activeTileIndex] || {};
+    var out  = rows;
 
-    if (fc.dateFilter && fc.dateFilter.enabled && activeFilters.date) {
-      var dcol = fm.exitDateField;
-      if (dcol) {
-        out = applyDateFilter(out, dcol,
+    if (ft.dateFilter && ft.dateFilter.enabled && activeFilters.date) {
+      var dateCol = findRemainingColumn(tile) || findColumnByType(tile, 'date');
+      if (dateCol) {
+        out = applyDateFilter(out, dateCol.field,
           activeFilters.date.preset, activeFilters.date.from, activeFilters.date.to);
       }
     }
-    if (fc.assetFilter && fc.assetFilter.enabled && activeFilters.asset && activeFilters.asset.length) {
-      var acol = fm.assetField;
-      if (acol) out = out.filter(function (r) { return activeFilters.asset.indexOf(String(r[acol] || '')) >= 0; });
-    }
-    if (fc.tenantFilter && fc.tenantFilter.enabled && activeFilters.tenant && activeFilters.tenant.length) {
-      var tcol = fm.tenantField;
-      if (tcol) out = out.filter(function (r) { return activeFilters.tenant.indexOf(String(r[tcol] || '')) >= 0; });
-    }
+
+    (ft.categoryFilters || []).forEach(function (catDef, slotIdx) {
+      var sel = activeFilters['cat' + slotIdx];
+      if (!catDef.enabled || !sel || !sel.length) return;
+      var colDef = (tile.columns || [])[catDef.columnIndex];
+      if (!colDef) return;
+      out = out.filter(function (r) { return sel.indexOf(String(r[colDef.field] || '')) >= 0; });
+    });
+
     return out;
   }
 
@@ -867,20 +1009,25 @@
   var currentDropdownEl = null;
 
   function renderFilterBar() {
-    var fc        = cfg.filterConfig || {};
-    var hasDate   = fc.dateFilter   && fc.dateFilter.enabled;
-    var hasAsset  = fc.assetFilter  && fc.assetFilter.enabled;
-    var hasTenant = fc.tenantFilter && fc.tenantFilter.enabled;
+    var tile = cfg.tiles[activeTileIndex] || {};
+    var ft   = ((cfg.filterConfig || {}).tiles || [])[activeTileIndex] || {};
+    var hasDate = !!(ft.dateFilter && ft.dateFilter.enabled &&
+      (findRemainingColumn(tile) || findColumnByType(tile, 'date')));
+    var catDefs = (ft.categoryFilters || [])
+      .map(function (c, i) { return { def: c, slotIdx: i }; })
+      .filter(function (x) { return x.def.enabled && (tile.columns || [])[x.def.columnIndex]; });
 
-    if (!hasDate && !hasAsset && !hasTenant) { $filterBar.style.display = 'none'; return; }
+    if (!hasDate && !catDefs.length) { $filterBar.style.display = 'none'; return; }
 
     closeDropdown();
     $filterBar.style.display = 'flex';
     $filterBar.innerHTML = '';
 
-    if (hasDate)   $filterBar.appendChild(buildDatePill(fc.dateFilter));
-    if (hasAsset)  $filterBar.appendChild(buildCategoryPill({ id: 'asset',  label: 'Asset',  field: 'assetField',  type: 'multi' }));
-    if (hasTenant) $filterBar.appendChild(buildCategoryPill({ id: 'tenant', label: 'Tenant', field: 'tenantField', type: 'multi' }));
+    if (hasDate) $filterBar.appendChild(buildDatePill(ft.dateFilter));
+    catDefs.forEach(function (x) {
+      var colDef = tile.columns[x.def.columnIndex];
+      $filterBar.appendChild(buildCategoryPill({ id: 'cat' + x.slotIdx, label: colDef.label, field: colDef.field }));
+    });
 
     var clearBtn = document.createElement('button');
     clearBtn.className = 'filter-clear-btn';
@@ -1028,7 +1175,7 @@
       if (currentDropdownEl && pill.classList.contains('open')) { closeDropdown(); return; }
       closeDropdown(); pill.classList.add('open');
 
-      var colName = cfg.tiles && cfg.tiles[3] && cfg.tiles[3][def.field];
+      var colName = def.field || null;
       var values  = colName ? getUniqueValues(colName) : [];
 
       var dropdown = document.createElement('div'); dropdown.className = 'filter-dropdown';

@@ -202,9 +202,54 @@ html, body {
 .kpi-color-dot.danger   { background: var(--danger); }
 
 /* Date filter fields container */
-#date-filter-fields { padding-top: 10px; }
+.date-filter-fields { padding-top: 10px; }
 
-/* Column visibility grid */
-.column-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 12px; margin-top: 8px; }
-.col-check { display: flex; align-items: center; gap: 7px; font-size: 13px; cursor: pointer; padding: 4px 0; }
-.col-check input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; flex-shrink: 0; cursor: pointer; }
+/* ── Detail-table column row list (Fields tab) ─────────────────────────────── */
+.col-row-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 6px; }
+.col-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1.3fr 90px 78px 16px 20px;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.col-row input[type="text"],
+.col-row select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 5px 7px;
+  font-size: 12px;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--surface2);
+  outline: none;
+}
+.col-row input[type="text"]:focus,
+.col-row select:focus { border-color: var(--accent); }
+.col-row-remaining-wrap {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--text-muted); white-space: nowrap;
+}
+.col-row-remaining-wrap input { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
+.col-row-move-btns { display: flex; flex-direction: column; }
+.col-row-move-btns button {
+  background: none; border: none; cursor: pointer; color: var(--text-muted);
+  font-size: 9px; padding: 0; line-height: 1.3; font-family: var(--font);
+}
+.col-row-move-btns button:hover { color: var(--accent); }
+.col-row-del {
+  background: none; border: none; cursor: pointer; color: var(--text-muted);
+  font-size: 17px; line-height: 1; padding: 0 2px; font-family: var(--font);
+}
+.col-row-del:hover { color: var(--danger); }
+.add-row-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; font-size: 12px; border: 1px dashed var(--border);
+  background: none; color: var(--text-muted); border-radius: var(--radius);
+  cursor: pointer; font-family: var(--font); margin-top: 4px;
+}
+.add-row-btn:hover { border-color: var(--accent); color: var(--accent); }

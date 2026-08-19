@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <style>
+    :root {
+      --bg: #F7F5F0; --surface: #FFFFFF; --surface2: #F0EDE8;
+      --border: #E8E4DD; --accent: #D4782F; --text: #1A1A1A;
+      --text-secondary: #4A4A4A; --text-muted: #6B6B6B;
+      --danger: #C62828; --radius: 8px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      overflow: hidden;
+    }
+
+    #panel {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ── Header ── */
+    #panel-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    #panel-subtitle {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+      min-height: 14px;
+    }
+    #panel-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    #panel-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 2px;
+      margin-top: 2px;
+      flex-shrink: 0;
+      transition: color .15s;
+    }
+    #panel-close:hover { color: var(--text); }
+
+    /* ── Tabs ── */
+    #panel-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .ptab {
+      flex: 1;
+      padding: 11px 4px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+      background: none;
+      border-top: none; border-left: none; border-right: none;
+      font-family: var(--font);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .ptab.active { color: var(--text); border-bottom-color: var(--text); }
+    .ptab:hover:not(.active) { color: var(--text-secondary); }
+
+    /* ── Body ── */
+    #panel-body { flex: 1; overflow-y: auto; min-height: 0; }
+    #panel-body::-webkit-scrollbar { width: 5px; }
+    #panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .tab-pane { display: none; padding: 18px 20px; }
+    .tab-pane.active { display: block; }
+
+    /* ── Loading / error ── */
+    .status-msg {
+      text-align: center;
+      padding: 40px 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ── Summary tab ── */
+    .score-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 18px;
+    }
+    .score-headline { display: flex; align-items: baseline; gap: 6px; margin-bottom: 7px; }
+    .score-number { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+    .score-unit { font-size: 15px; font-weight: 500; color: var(--text-secondary); }
+    .score-meta { font-size: 12px; color: var(--text-muted); line-height: 1.55; margin-bottom: 13px; }
+    .score-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--border);
+      padding-top: 11px;
+    }
+    .stat-item + .stat-item { border-left: 1px solid var(--border); padding-left: 14px; }
+    .stat-label {
+      font-size: 9px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--text-muted); margin-bottom: 3px;
+    }
+    .stat-value { font-size: 19px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+    .stat-value.danger { color: var(--danger); }
+
+    .section-label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--text-muted); margin-bottom: 12px;
+    }
+    .dim-list { display: flex; flex-direction: column; gap: 13px; }
+    .dim-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+    .dim-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .dim-score { font-size: 13px; font-weight: 600; color: var(--text); }
+    .dim-bar-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+    .dim-bar-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+    .dim-sub { font-size: 11px; color: var(--text-muted); }
+    .trend-note {
+      margin-top: 18px;
+      padding-top: 13px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-muted);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* ── Rules tab ── */
+    .rule-list { display: flex; flex-direction: column; }
+    .rule-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 0; border-bottom: 1px solid var(--border);
+    }
+    .rule-item:last-child { border-bottom: none; }
+    .rule-id-badge {
+      font-size: 10px; font-weight: 600; color: var(--text-muted);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 5px; white-space: nowrap;
+      flex-shrink: 0; margin-top: 1px; font-family: monospace;
+    }
+    .rule-body { flex: 1; min-width: 0; }
+    .rule-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+    .rule-desc { font-size: 11px; color: var(--text-muted); }
+    .rule-count { font-size: 14px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .rule-count.has-failures { color: var(--danger); }
+    .rule-count.no-failures { color: var(--text-muted); font-weight: 400; }
+
+    /* ── Failing records tab ── */
+    .fr-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px; gap: 10px; flex-wrap: wrap;
+    }
+    .fr-count { font-size: 13px; color: var(--text-muted); }
+    .fr-count strong { color: var(--danger); font-weight: 700; }
+    .fr-download {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; background: var(--text); color: #fff;
+      border: none; border-radius: var(--radius);
+      font-size: 12px; font-weight: 500; font-family: var(--font);
+      cursor: pointer; transition: opacity .15s; white-space: nowrap;
+    }
+    .fr-download:hover { opacity: .82; }
+    .fr-table-wrap { overflow-x: auto; }
+    .fr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .fr-table th {
+      text-align: left; font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted);
+      padding: 0 10px 7px 0; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .fr-table td {
+      padding: 8px 10px 8px 0; border-bottom: 1px solid var(--border);
+      color: var(--text); vertical-align: top; line-height: 1.4;
+    }
+    .fr-table tr:last-child td { border-bottom: none; }
+    .fr-table .col-account { font-family: monospace; font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+    .fr-table .col-rule { font-size: 10px; font-weight: 600; color: var(--text-muted); white-space: nowrap; font-family: monospace; }
+    .fr-table .col-reason { color: var(--danger); }
+    .fr-footer { margin-top: 11px; font-size: 11px; color: var(--text-muted); text-align: center; }
+  </style>
+</head>
+<body>
+<div id="panel">
+
+  <div id="panel-header">
+    <div>
+      <div id="panel-subtitle"></div>
+      <div id="panel-title">Data quality</div>
+    </div>
+    <button id="panel-close" title="Close" aria-label="Close">&#215;</button>
+  </div>
+
+  <div id="panel-tabs">
+    <button class="ptab active" data-tab="summary">Summary</button>
+    <button class="ptab" data-tab="rules">Rules</button>
+    <button class="ptab" data-tab="failing">Failing records</button>
+  </div>
+
+  <div id="panel-body">
+    <div class="tab-pane active" id="tab-summary"><div class="status-msg">Loading…</div></div>
+    <div class="tab-pane" id="tab-rules"></div>
+    <div class="tab-pane" id="tab-failing"></div>
+  </div>
+
+</div>
+<script>
+'use strict';
+
+(function () {
+
+  var MAX_ROWS     = 50000;
+  var DISPLAY_ROWS = 100;
+
+  // ── Mock data ────────────────────────────────────────────────────────────────
+
+  var mkRow = function (data) {
+    var row = {};
+    Object.keys(data).forEach(function (k) {
+      var v = data[k];
+      row[k]         = typeof v === 'number' ? v.toLocaleString() : String(v);
+      row[k + '__n'] = v;
+    });
+    return row;
+  };
+
+  var MOCK_FM = {
+    rowTypeField: '__m_type', passRateField: '__m_score',
+    rulesCountField: '__m_rules', failuresField: '__m_fail',
+    blockingField: '__m_block', totalRecordsField: '__m_total',
+    tablesField: '__m_tables', runTimeField: '__m_runtime',
+    dimensionNameField: '__m_type', dimensionScoreField: '__m_score',
+    dimensionFailuresField: '__m_fail', dimensionBindingsField: '__m_bind',
+    ruleIdField: '__m_rid', ruleNameField: '__m_rname',
+    ruleDimensionField: '__m_rdim', ruleDescField: '__m_rdesc',
+    ruleFailuresField: '__m_rfail',
+    accountField: '__m_acc', ruleField: '__m_frule',
+    columnField: '__m_fcol', reasonField: '__m_freason',
+  };
+
+  var MOCK_SUMMARY = [
+    mkRow({ __m_type: 'Overall',      __m_score: 94.3, __m_rules: 18, __m_fail: 2734, __m_block: 0, __m_total: 47892, __m_tables: 6, __m_runtime: '2 hours ago' }),
+    mkRow({ __m_type: 'Completeness', __m_score: 96.2, __m_fail: 982,  __m_bind: 4 }),
+    mkRow({ __m_type: 'Validity',     __m_score: 91.4, __m_fail: 1458, __m_bind: 7 }),
+    mkRow({ __m_type: 'Uniqueness',   __m_score: 99.8, __m_fail: 94,   __m_bind: 4 }),
+    mkRow({ __m_type: 'Consistency',  __m_score: 97.1, __m_fail: 200,  __m_bind: 3 }),
+  ];
+
+  var MOCK_RULES = [
+    mkRow({ __m_rid: 'RUL-0007', __m_rname: 'Email validity',                               __m_rdim: 'Validity',     __m_rdesc: 'applied to personemail across 2 bindings',    __m_rfail: 1203 }),
+    mkRow({ __m_rid: 'RUL-0001', __m_rname: 'Emirates ID validity',                         __m_rdim: 'Validity',     __m_rdesc: 'applied to nationalidnumber__pc',              __m_rfail: 892  }),
+    mkRow({ __m_rid: 'RUL-0003', __m_rname: 'Completeness — Gender',               __m_rdim: 'Completeness', __m_rdesc: 'applied to gender__pc',                        __m_rfail: 421  }),
+    mkRow({ __m_rid: 'RUL-0003', __m_rname: 'Completeness — Nationality',          __m_rdim: 'Completeness', __m_rdesc: 'applied to nationality__pc',                   __m_rfail: 218  }),
+    mkRow({ __m_rid: 'RUL-0004', __m_rname: 'Uniqueness',                                   __m_rdim: 'Uniqueness',   __m_rdesc: '4 bindings, all passing',                      __m_rfail: 0    }),
+    mkRow({ __m_rid: 'RUL-0010', __m_rname: 'Referential integrity — Nationality lookup', __m_rdim: 'Integrity', __m_rdesc: 'applied to nationality__pc',                __m_rfail: 0    }),
+  ];
+
+  var MOCK_FAILING = [
+    mkRow({ __m_acc: 'SF-9482737', __m_frule: 'RUL-0007', __m_fcol: 'personemail',          __m_freason: 'Missing domain'            }),
+    mkRow({ __m_acc: 'SF-9482514', __m_frule: 'RUL-0001', __m_fcol: 'nationalidnumber__pc', __m_freason: 'Wrong length (14 digits)'  }),
+    mkRow({ __m_acc: 'SF-9482492', __m_frule: 'RUL-0003', __m_fcol: 'gender__pc',           __m_freason: 'Null value'                }),
+    mkRow({ __m_acc: 'SF-9482398', __m_frule: 'RUL-0007', __m_fcol: 'personemail',          __m_freason: 'Invalid format'            }),
+    mkRow({ __m_acc: 'SF-9482201', __m_frule: 'RUL-0001', __m_fcol: 'nationalidnumber__pc', __m_freason: 'Non-numeric characters'    }),
+    mkRow({ __m_acc: 'SF-9481893', __m_frule: 'RUL-0003', __m_fcol: 'nationality__pc',      __m_freason: 'Null value'                }),
+    mkRow({ __m_acc: 'SF-9481750', __m_frule: 'RUL-0007', __m_fcol: 'personemail',          __m_freason: 'Missing @ symbol'          }),
+    mkRow({ __m_acc: 'SF-9481623', __m_frule: 'RUL-0001', __m_fcol: 'nationalidnumber__pc', __m_freason: 'Wrong length (16 digits)'  }),
+    mkRow({ __m_acc: 'SF-9481441', __m_frule: 'RUL-0003', __m_fcol: 'gender__pc',           __m_freason: 'Null value'                }),
+    mkRow({ __m_acc: 'SF-9481302', __m_frule: 'RUL-0007', __m_fcol: 'personemail',          __m_freason: 'Invalid domain extension'  }),
+    mkRow({ __m_acc: 'SF-9481188', __m_frule: 'RUL-0003', __m_fcol: 'nationality__pc',      __m_freason: 'Null value'                }),
+    mkRow({ __m_acc: 'SF-9480994', __m_frule: 'RUL-0001', __m_fcol: 'nationalidnumber__pc', __m_freason: 'Non-numeric characters'    }),
+    mkRow({ __m_acc: 'SF-9480831', __m_frule: 'RUL-0007', __m_fcol: 'personemail',          __m_freason: 'Disposable email provider' }),
+    mkRow({ __m_acc: 'SF-9480719', __m_frule: 'RUL-0003', __m_fcol: 'gender__pc',           __m_freason: 'Null value'                }),
+    mkRow({ __m_acc: 'SF-9480502', __m_frule: 'RUL-0001', __m_fcol: 'nationalidnumber__pc', __m_freason: 'Wrong length (13 digits)'  }),
+  ];
+
+  var MOCK_FAILING_TOTAL = 2734;
+
+  // ── State ────────────────────────────────────────────────────────────────────
+
+  var cfg = {
+    sourceWorksheet: '', rulesWorksheet: '', failingWorksheet: '',
+    panelTitle: '', overallRowValue: '',
+    fieldMappings: {},
+    display: { greenThreshold: 95, amberThreshold: 80, trendText: '' },
+    demoMode: false,
+  };
+
+  var summaryRows = [], rulesRows = [], failingRows = [];
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+
+  window.addEventListener('load', function () {
+    tableau.extensions.initializeDialogAsync().then(function () {
+      loadSavedConfig();
+      if (cfg.demoMode) {
+        loadMockData();
+      } else {
+        fetchAll();
+      }
+    });
+  });
+
+  function loadSavedConfig() {
+    try {
+      var all = tableau.extensions.settings.getAll();
+      if (all.sourceWorksheet)  cfg.sourceWorksheet  = all.sourceWorksheet;
+      if (all.rulesWorksheet)   cfg.rulesWorksheet   = all.rulesWorksheet;
+      if (all.failingWorksheet) cfg.failingWorksheet = all.failingWorksheet;
+      if (all.panelTitle)       cfg.panelTitle       = all.panelTitle;
+      if (all.overallRowValue)  cfg.overallRowValue  = all.overallRowValue;
+      if (all.fieldMappings)    cfg.fieldMappings    = JSON.parse(all.fieldMappings);
+      if (all.display)          cfg.display          = JSON.parse(all.display);
+      if (all.demoMode)         cfg.demoMode         = JSON.parse(all.demoMode);
+    } catch (e) {}
+    document.getElementById('panel-subtitle').textContent = cfg.panelTitle || '';
+  }
+
+  // ── Mock data ─────────────────────────────────────────────────────────────────
+
+  function loadMockData() {
+    summaryRows = MOCK_SUMMARY;
+    rulesRows   = MOCK_RULES;
+    failingRows = MOCK_FAILING;
+    cfg.fieldMappings   = MOCK_FM;
+    cfg.overallRowValue = 'Overall';
+    if (!cfg.panelTitle) {
+      cfg.panelTitle = 'Property Customer Overview';
+      document.getElementById('panel-subtitle').textContent = cfg.panelTitle;
+    }
+    renderAll();
+  }
+
+  // ── Data fetch ────────────────────────────────────────────────────────────────
+
+  function fetchAll() {
+    if (!cfg.sourceWorksheet) {
+      document.getElementById('tab-summary').innerHTML = '<div class="status-msg">No worksheet configured. Close this panel and use the gear icon to configure.</div>';
+      return;
+    }
+
+    var dashboard = tableau.extensions.dashboardContent.dashboard;
+    var summaryWs = dashboard.worksheets.find(function (w) { return w.name === cfg.sourceWorksheet; });
+    if (!summaryWs) {
+      document.getElementById('tab-summary').innerHTML = '<div class="status-msg">Worksheet "' + cfg.sourceWorksheet + '" not found on this dashboard.</div>';
+      return;
+    }
+
+    var rulesWs = cfg.rulesWorksheet
+      ? dashboard.worksheets.find(function (w) { return w.name === cfg.rulesWorksheet; }) : null;
+    var failingWs = cfg.failingWorksheet
+      ? dashboard.worksheets.find(function (w) { return w.name === cfg.failingWorksheet; }) : null;
+
+    Promise.all([
+      summaryWs.getSummaryDataAsync({ maxRows: MAX_ROWS }),
+      rulesWs   ? rulesWs.getSummaryDataAsync({ maxRows: MAX_ROWS })   : Promise.resolve(null),
+      failingWs ? failingWs.getSummaryDataAsync({ maxRows: MAX_ROWS }) : Promise.resolve(null),
+    ]).then(function (results) {
+      summaryRows = results[0] ? parseDataTable(results[0]) : [];
+      rulesRows   = results[1] ? parseDataTable(results[1]) : [];
+      failingRows = results[2] ? parseDataTable(results[2]) : [];
+      renderAll();
+    }).catch(function (err) {
+      console.error('Fetch error:', err);
+      document.getElementById('tab-summary').innerHTML = '<div class="status-msg">Error loading data. Check the browser console for details.</div>';
+    });
+  }
+
+  function parseDataTable(dt) {
+    var cols = dt.columns.map(function (c) { return c.fieldName; });
+    return dt.data.map(function (row) {
+      var obj = {};
+      cols.forEach(function (col, i) {
+        obj[col]          = row[i].formattedValue;
+        obj[col + '__n']  = row[i].nativeValue;
+      });
+      return obj;
+    });
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+
+  function renderAll() {
+    var fm = cfg.fieldMappings;
+    var overallRow, dimRows;
+
+    if (fm.rowTypeField && cfg.overallRowValue) {
+      overallRow = summaryRows.find(function (r) {
+        return String(r[fm.rowTypeField] || '').toLowerCase() === cfg.overallRowValue.toLowerCase();
+      });
+      dimRows = summaryRows.filter(function (r) { return r !== overallRow; });
+    } else {
+      overallRow = summaryRows[0];
+      dimRows    = summaryRows.slice(1);
+    }
+    overallRow = overallRow || {};
+
+    var score = parseScore(overallRow[fm.passRateField + '__n']);
+    renderSummaryTab(score, overallRow, dimRows);
+    renderRulesTab();
+    renderFailingTab();
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+
+  function parseScore(native) {
+    var v = parseFloat(native);
+    if (isNaN(v)) return null;
+    if (v > 0 && v <= 1) v = v * 100;
+    return Math.round(v * 10) / 10;
+  }
+
+  function scoreColor(score) {
+    if (score === null) return '#9E9E9E';
+    var g = parseFloat(cfg.display.greenThreshold) || 95;
+    var a = parseFloat(cfg.display.amberThreshold) || 80;
+    if (score >= g) return '#2E7D32';
+    if (score >= a) return '#D4782F';
+    return '#C62828';
+  }
+
+  function fmt(nativeVal, fallback) {
+    var n = parseFloat(nativeVal);
+    if (!isNaN(n) && nativeVal != null) return n.toLocaleString();
+    return fallback || '—';
+  }
+
+  function esc(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── Summary tab ───────────────────────────────────────────────────────────────
+
+  function renderSummaryTab(score, row, dimRows) {
+    var fm    = cfg.fieldMappings;
+    var color = scoreColor(score);
+
+    var rulesCount = fmt(row[fm.rulesCountField    + '__n'], row[fm.rulesCountField]);
+    var failures   = fmt(row[fm.failuresField      + '__n'], row[fm.failuresField]);
+    var blocking   = fmt(row[fm.blockingField      + '__n'], row[fm.blockingField] || '0');
+    var totalRec   = fmt(row[fm.totalRecordsField  + '__n'], row[fm.totalRecordsField]);
+    var tables     = fmt(row[fm.tablesField        + '__n'], row[fm.tablesField]);
+    var runTime    = row[fm.runTimeField] || '';
+
+    var meta = buildMeta(rulesCount, runTime, tables, failures, totalRec);
+
+    var dimHtml = '';
+    if (dimRows && dimRows.length) {
+      var items = dimRows.map(function (r) {
+        var name      = r[fm.dimensionNameField]    || '';
+        var s         = parseScore(r[fm.dimensionScoreField    + '__n']);
+        var dimFail   = fmt(r[fm.dimensionFailuresField + '__n'], r[fm.dimensionFailuresField] || '0');
+        var bindings  = fmt(r[fm.dimensionBindingsField + '__n'], r[fm.dimensionBindingsField]);
+        var col       = scoreColor(s);
+        var pct       = s !== null ? s.toFixed(1) + '%' : '—';
+        var width     = s !== null ? Math.min(100, s).toFixed(2) + '%' : '0%';
+        var allPass   = parseFloat(r[fm.dimensionFailuresField + '__n']) === 0;
+        var sub       = (allPass ? 'All passing' : dimFail + ' rows failed') +
+                        (bindings && bindings !== '—' ? ' · ' + bindings + ' bindings' : '');
+        return '<div class="dim-item">' +
+          '<div class="dim-header"><span class="dim-name">' + esc(name) + '</span><span class="dim-score">' + esc(pct) + '</span></div>' +
+          '<div class="dim-bar-track"><div class="dim-bar-fill" style="width:' + width + ';background:' + col + '"></div></div>' +
+          '<div class="dim-sub">' + esc(sub) + '</div>' +
+        '</div>';
+      }).join('');
+      dimHtml = '<div class="section-label">By dimension</div><div class="dim-list">' + items + '</div>';
+    }
+
+    var trendHtml = (cfg.display.trendText)
+      ? '<div class="trend-note">' + esc(cfg.display.trendText) + '</div>'
+      : '';
+
+    document.getElementById('tab-summary').innerHTML =
+      '<div class="score-card">' +
+        '<div class="score-headline">' +
+          '<span class="score-number" style="color:' + color + '">' + (score !== null ? score.toFixed(1) : '—') + '</span>' +
+          '<span class="score-unit">% pass rate</span>' +
+        '</div>' +
+        '<div class="score-meta">' + esc(meta) + '</div>' +
+        '<div class="score-stats">' +
+          '<div class="stat-item"><div class="stat-label">Rules</div><div class="stat-value">' + esc(rulesCount) + '</div></div>' +
+          '<div class="stat-item"><div class="stat-label">Failures</div><div class="stat-value danger">' + esc(failures) + '</div></div>' +
+          '<div class="stat-item"><div class="stat-label">Blocking</div><div class="stat-value">' + esc(blocking) + '</div></div>' +
+        '</div>' +
+      '</div>' +
+      dimHtml + trendHtml;
+  }
+
+  function buildMeta(rules, runTime, tables, failures, totalRec) {
+    var parts = [];
+    if (rules && rules !== '—')  parts.push(rules + ' rule' + (rules === '1' ? '' : 's'));
+    if (runTime)                 parts.push('ran ' + runTime);
+    if (tables && tables !== '—') parts.push('across ' + tables + ' table' + (tables === '1' ? '' : 's'));
+    var s = parts.join(' ');
+    if (failures && failures !== '—' && totalRec && totalRec !== '—') {
+      s += '. ' + failures + ' of ' + totalRec + ' records failed at least one rule.';
+    } else if (failures && failures !== '—') {
+      s += '. ' + failures + ' records failed.';
+    }
+    return s;
+  }
+
+  // ── Rules tab ─────────────────────────────────────────────────────────────────
+
+  function renderRulesTab() {
+    var fm  = cfg.fieldMappings;
+    var $el = document.getElementById('tab-rules');
+    if (!rulesRows.length) {
+      $el.innerHTML = '<div class="status-msg">No rules data configured.</div>';
+      return;
+    }
+    var sorted = rulesRows.slice().sort(function (a, b) {
+      return (parseFloat(b[fm.ruleFailuresField + '__n']) || 0) -
+             (parseFloat(a[fm.ruleFailuresField + '__n']) || 0);
+    });
+    var html = sorted.map(function (r) {
+      var id      = r[fm.ruleIdField]        || '';
+      var name    = r[fm.ruleNameField]      || '';
+      var dim     = r[fm.ruleDimensionField] || '';
+      var desc    = r[fm.ruleDescField]      || '';
+      var failNat = parseFloat(r[fm.ruleFailuresField + '__n']) || 0;
+      var failFmt = fmt(r[fm.ruleFailuresField + '__n'], r[fm.ruleFailuresField] || '0');
+      var subLine = [dim, desc].filter(Boolean).join(' · ');
+      return '<div class="rule-item">' +
+        (id ? '<span class="rule-id-badge">' + esc(id) + '</span>' : '') +
+        '<div class="rule-body"><div class="rule-name">' + esc(name) + '</div>' +
+        (subLine ? '<div class="rule-desc">' + esc(subLine) + '</div>' : '') + '</div>' +
+        '<div class="rule-count ' + (failNat > 0 ? 'has-failures' : 'no-failures') + '">' + esc(failFmt) + '</div>' +
+      '</div>';
+    }).join('');
+    $el.innerHTML = '<div class="rule-list">' + html + '</div>';
+  }
+
+  // ── Failing records tab ───────────────────────────────────────────────────────
+
+  function renderFailingTab() {
+    var fm    = cfg.fieldMappings;
+    var $el   = document.getElementById('tab-failing');
+    var total   = cfg.demoMode ? MOCK_FAILING_TOTAL : failingRows.length;
+    var display = failingRows.slice(0, DISPLAY_ROWS);
+
+    var hasAccount = !!fm.accountField;
+    var hasRule    = !!fm.ruleField;
+    var hasCol     = !!fm.columnField;
+    var hasReason  = !!fm.reasonField;
+
+    var headerHtml =
+      '<div class="fr-header">' +
+        '<div class="fr-count"><strong>' + total.toLocaleString() + '</strong> failing records · latest run</div>' +
+        (total > 0 ? '<button class="fr-download" id="btn-csv">&#8595; Download CSV</button>' : '') +
+      '</div>';
+
+    if (!total) {
+      $el.innerHTML = headerHtml + '<div class="status-msg">No failing records found.</div>';
+      return;
+    }
+
+    var thead = '<tr>' +
+      (hasAccount ? '<th>Account #</th>' : '') +
+      (hasRule    ? '<th>Rule</th>'      : '') +
+      (hasCol     ? '<th>Column</th>'    : '') +
+      (hasReason  ? '<th>Reason</th>'    : '') +
+      '</tr>';
+
+    var tbody = display.map(function (r) {
+      return '<tr>' +
+        (hasAccount ? '<td class="col-account">' + esc(r[fm.accountField] || '') + '</td>' : '') +
+        (hasRule    ? '<td class="col-rule">'    + esc(r[fm.ruleField]    || '') + '</td>' : '') +
+        (hasCol     ? '<td>'                     + esc(r[fm.columnField]  || '') + '</td>' : '') +
+        (hasReason  ? '<td class="col-reason">'  + esc(r[fm.reasonField]  || '') + '</td>' : '') +
+      '</tr>';
+    }).join('');
+
+    var footer = total > display.length
+      ? '<div class="fr-footer">Showing ' + display.length + ' of ' + total.toLocaleString() + ' · download CSV for the full list</div>'
+      : '<div class="fr-footer">Showing all ' + total.toLocaleString() + ' records</div>';
+
+    $el.innerHTML = headerHtml +
+      '<div class="fr-table-wrap"><table class="fr-table"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table></div>' +
+      footer;
+
+    var csvBtn = document.getElementById('btn-csv');
+    if (csvBtn) csvBtn.addEventListener('click', downloadCSV);
+  }
+
+  // ── CSV download ──────────────────────────────────────────────────────────────
+
+  function downloadCSV() {
+    var fm   = cfg.fieldMappings;
+    var cols = [];
+    if (fm.accountField) cols.push({ header: 'Account #', key: fm.accountField });
+    if (fm.ruleField)    cols.push({ header: 'Rule',       key: fm.ruleField    });
+    if (fm.columnField)  cols.push({ header: 'Column',     key: fm.columnField  });
+    if (fm.reasonField)  cols.push({ header: 'Reason',     key: fm.reasonField  });
+    var lines = [cols.map(function (c) { return csvCell(c.header); }).join(',')];
+    failingRows.forEach(function (r) {
+      lines.push(cols.map(function (c) { return csvCell(r[c.key] || ''); }).join(','));
+    });
+    var blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url; a.download = 'failing-records.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
+  function csvCell(val) {
+    var s = String(val);
+    if (/[,"\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────────────────────
+
+  document.querySelectorAll('.ptab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.ptab').forEach(function (t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-pane').forEach(function (p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  document.getElementById('panel-close').addEventListener('click', function () {
+    tableau.extensions.ui.closeDialog('closed');
+  });
+
+})();
+</script>
+</body>
+</html>

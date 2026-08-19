@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Renewal Watchlist</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <style>
+    :root {
+      --bg:             #F7F5F0;
+      --surface:        #FFFFFF;
+      --surface2:       #F0EDE8;
+      --border:         #E8E4DD;
+      --accent:         #D4782F;
+      --text:           #1A1A1A;
+      --text-secondary: #4A4A4A;
+      --text-muted:     #6B6B6B;
+      --danger:         #C62828;
+      --positive:       #2E7D32;
+      --radius:         8px;
+      --font:           'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); overflow: hidden; }
+
+    #app { display: flex; flex-direction: column; height: 100vh; position: relative; overflow: hidden; }
+
+    /* ── Header ── */
+    #header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px 4px; flex-shrink: 0; gap: 12px;
+    }
+    #header h1 { font-size: 15px; font-weight: 700; color: var(--text); white-space: nowrap; }
+    #header-summary {
+      font-size: 12px; color: var(--text-muted); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums;
+    }
+    #header-summary .pos { color: var(--positive); font-weight: 600; }
+    #header-summary .neg { color: var(--danger); font-weight: 600; }
+
+    /* ── Data cap notice ── */
+    #data-cap-notice {
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 16px; background: #FFFDE7;
+      border-bottom: 1px solid #FFE082;
+      font-size: 11px; font-weight: 500; color: #E65100; flex-shrink: 0;
+    }
+
+    /* ── WINDOW bar (fixed built-in filter) ── */
+    #window-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px 6px; flex-shrink: 0; flex-wrap: wrap;
+    }
+    .window-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--text-muted); margin-right: 4px;
+    }
+    .window-pill {
+      padding: 5px 13px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text-secondary);
+      font-size: 12px; font-weight: 600; font-family: var(--font);
+      cursor: pointer; transition: background .14s, border-color .14s, color .14s;
+    }
+    .window-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .window-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* ── Generic filter bar ── */
+    #filter-bar {
+      display: flex; align-items: center;
+      padding: 4px 16px 10px; gap: 10px; flex-shrink: 0; flex-wrap: wrap;
+    }
+    .filter-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 14px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 20px;
+      font-size: 12px; font-weight: 500; color: var(--text-muted);
+      cursor: pointer; user-select: none;
+      transition: background .14s, border-color .14s, box-shadow .14s;
+      white-space: nowrap; font-family: var(--font);
+    }
+    .filter-pill:hover { background: var(--surface2); border-color: #c5c0b9; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+    .filter-pill.active { background: rgba(212,120,47,.10); border-color: var(--accent); color: var(--text); }
+    .filter-pill.open { box-shadow: 0 1px 6px rgba(0,0,0,.12); }
+    .pill-chevron { font-size: 10px; color: var(--text-muted); }
+    .filter-pill.active .pill-chevron { color: var(--accent); }
+    .pill-clear {
+      font-size: 14px; line-height: 1; color: var(--text-muted);
+      padding: 0 2px; cursor: pointer; transition: color .12s; font-weight: 400;
+    }
+    .pill-clear:hover { color: var(--danger); }
+    .pill-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 18px; height: 18px; padding: 0 5px;
+      background: var(--accent); color: #fff; border-radius: 9px;
+      font-size: 10px; font-weight: 700; line-height: 1;
+    }
+    .filter-clear-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 12px; background: transparent; border: 1px solid var(--border);
+      border-radius: 20px; font-size: 12px; font-weight: 500; color: var(--text-muted);
+      cursor: pointer; transition: color .14s, border-color .14s;
+      white-space: nowrap; font-family: var(--font);
+    }
+    .filter-clear-btn:hover { color: var(--danger); border-color: var(--danger); }
+    .filter-dropdown {
+      position: fixed; z-index: 200; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.14);
+      min-width: 210px; max-width: 270px; max-height: 340px;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .filter-dropdown-search {
+      flex-shrink: 0; padding: 8px 10px; border-bottom: 1px solid var(--border);
+    }
+    .filter-dropdown-search input {
+      width: 100%; padding: 6px 9px; font-size: 12px; font-family: var(--font);
+      border: 1px solid var(--border); border-radius: 6px; outline: none;
+      background: var(--surface2); color: var(--text);
+    }
+    .filter-dropdown-search input:focus { border-color: var(--accent); }
+    .filter-dropdown-body { overflow-y: auto; flex: 1; }
+    .filter-dropdown-body::-webkit-scrollbar { width: 4px; }
+    .filter-dropdown-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .filter-dropdown-item {
+      display: flex; align-items: center; gap: 9px; padding: 9px 14px;
+      font-size: 13px; color: var(--text); cursor: pointer; transition: background .1s;
+    }
+    .filter-dropdown-item.hidden-by-search { display: none; }
+    .filter-dropdown-item:hover { background: var(--surface2); }
+    .filter-dropdown-item input[type="checkbox"],
+    .filter-dropdown-item input[type="radio"] {
+      accent-color: var(--accent); width: 14px; height: 14px; flex-shrink: 0; cursor: pointer;
+    }
+    .filter-dropdown-item .fdi-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .filter-dropdown-empty { padding: 14px; font-size: 12px; color: var(--text-muted); text-align: center; }
+    .filter-dropdown-footer {
+      display: flex; justify-content: space-between;
+      padding: 8px 14px; border-top: 1px solid var(--border);
+    }
+    .filter-dropdown-footer button {
+      background: none; border: none; font-size: 12px; font-family: var(--font);
+      color: var(--accent); cursor: pointer; padding: 2px 0; font-weight: 500;
+    }
+    .filter-dropdown-footer button:hover { text-decoration: underline; }
+    .date-preset-item {
+      display: flex; align-items: center; gap: 9px; padding: 9px 14px;
+      font-size: 13px; color: var(--text); cursor: pointer; transition: background .1s;
+    }
+    .date-preset-item:hover { background: var(--surface2); }
+    .date-preset-item.selected { font-weight: 600; color: var(--accent); }
+    .preset-dot { font-size: 11px; flex-shrink: 0; color: var(--text-muted); }
+    .date-preset-item.selected .preset-dot { color: var(--accent); }
+    .date-custom-inputs {
+      display: flex; flex-direction: column; gap: 7px;
+      padding: 10px 14px 8px; border-top: 1px solid var(--border); background: var(--surface2);
+    }
+    .date-custom-row { display: flex; align-items: center; gap: 8px; }
+    .date-custom-row label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--text-muted); width: 30px; flex-shrink: 0;
+    }
+    .date-custom-row input[type="date"] {
+      flex: 1; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 12px; font-family: var(--font); color: var(--text);
+      background: var(--surface); outline: none;
+    }
+    .date-custom-row input[type="date"]:focus { border-color: var(--accent); }
+    .date-apply-btn {
+      padding: 6px 14px; background: var(--accent); color: #fff; border: none;
+      border-radius: 6px; font-size: 12px; font-family: var(--font);
+      font-weight: 500; cursor: pointer; width: 100%; margin-top: 2px;
+    }
+    .date-apply-btn:hover { opacity: .88; }
+
+    /* ── Main table ── */
+    #main { flex: 1; padding: 0 16px 16px; min-height: 0; overflow: auto; }
+    .rw-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .rw-table thead th {
+      text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--text-muted); padding: 8px 10px;
+      border-bottom: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0;
+      background: var(--bg);
+    }
+    .rw-table th.num, .rw-table td.num { text-align: right; }
+    .rw-table tbody td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .rw-table tbody tr:hover { background: rgba(0,0,0,.015); }
+
+    .col-in { color: var(--accent); font-weight: 600; white-space: nowrap; }
+    .tenant-cell { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .tenant-name { font-weight: 600; color: var(--text); }
+    .unit-badge {
+      display: inline-flex; align-items: center; padding: 2px 7px;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+      font-size: 10px; font-weight: 600; color: var(--text-muted); white-space: nowrap;
+    }
+
+    .uplift-pos { color: var(--positive); font-weight: 600; }
+    .uplift-neg { color: var(--danger); font-weight: 600; }
+    .uplift-neutral { color: var(--text-muted); font-weight: 500; }
+
+    .new-rent-cell { text-align: right; }
+    .new-rent-amount { font-weight: 700; color: var(--text); white-space: nowrap; }
+    .new-rent-delta { display: block; font-size: 11px; margin-top: 1px; }
+    .new-rent-delta.pos { color: var(--positive); }
+    .new-rent-delta.neg { color: var(--danger); }
+    .open-badge {
+      display: inline-block; margin-top: 2px; padding: 1px 8px;
+      border: 1px solid var(--border); border-radius: 10px;
+      font-size: 9px; font-weight: 700; letter-spacing: .05em; color: var(--text-muted);
+    }
+
+    .rw-subtotal-row td {
+      background: var(--surface2); font-weight: 700; border-bottom: none;
+      border-top: 2px solid var(--border);
+    }
+    .rw-subtotal-row .subtotal-label { font-weight: 700; color: var(--text); }
+
+    .table-empty-msg {
+      text-align: center; color: var(--text-muted); font-size: 13px; padding: 40px 16px;
+    }
+
+    /* ── Gear button — visible on hover, authoring mode only ── */
+    #gear-btn {
+      position: fixed; top: 8px; right: 8px; z-index: 50;
+      width: 30px; height: 30px; border-radius: 6px;
+      background: rgba(255,255,255,0.92); border: 1px solid var(--border);
+      color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .14s ease, color .14s, border-color .14s;
+    }
+    #app:hover #gear-btn      { opacity: 1; }
+    #gear-btn:hover           { color: var(--accent); border-color: var(--accent); }
+
+    /* ── Empty state ── */
+    #empty-state {
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; gap: 10px; color: var(--text-muted); text-align: center; padding: 32px;
+    }
+    #empty-state h2 { font-size: 16px; color: var(--text); }
+    #empty-state p  { font-size: 14px; max-width: 300px; line-height: 1.5; }
+    #empty-state button {
+      margin-top: 6px; padding: 8px 20px; background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius);
+      font-size: 14px; font-family: var(--font); font-weight: 500; cursor: pointer;
+    }
+    #empty-state button:hover { opacity: .88; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <div id="data-cap-notice" style="display:none;"></div>
+
+  <div id="header" style="display:none;">
+    <h1>Renewal Watchlist</h1>
+    <div id="header-summary"></div>
+  </div>
+
+  <div id="window-bar" style="display:none;"></div>
+  <div id="filter-bar" style="display:none;"></div>
+
+  <div id="main" style="display:none;">
+    <table class="rw-table">
+      <thead>
+        <tr>
+          <th>Expiry</th>
+          <th>In</th>
+          <th>Tenant</th>
+          <th class="num">Area (M&sup2;)</th>
+          <th class="num">Rate/M&sup2; (Cur &rarr; New)</th>
+          <th class="num">Uplift</th>
+          <th class="num">New Rent</th>
+        </tr>
+      </thead>
+      <tbody id="rw-tbody"></tbody>
+      <tfoot id="rw-tfoot"></tfoot>
+    </table>
+  </div>
+
+  <div id="empty-state">
+    <h2>Renewal Watchlist</h2>
+    <p>Configure the extension to get started.</p>
+    <button id="empty-config-btn">Configure Extension</button>
+  </div>
+
+  <button id="gear-btn" title="Configure" aria-label="Configure" hidden>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </button>
+
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>

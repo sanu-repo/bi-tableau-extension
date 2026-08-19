@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Quality</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <style>
+    :root {
+      --border: #E8E4DD; --accent: #D4782F; --text: #1A1A1A;
+      --text-muted: #6B6B6B; --radius: 8px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: transparent;
+      overflow: hidden;
+    }
+
+    #wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Pill ── */
+    #pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px 7px 10px;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid #D8D4CD;
+      border-radius: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.13);
+      cursor: pointer;
+      transition: box-shadow .15s, transform .1s;
+      user-select: none;
+      white-space: nowrap;
+    }
+    #pill:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.18); transform: translateY(-1px); }
+    #pill-dot   { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; transition: background .3s; }
+    #pill-score { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+    #pill-label { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+
+    /* ── Unconfigured state ── */
+    #pill.empty {
+      border-style: dashed;
+      background: rgba(255,255,255,0.85);
+    }
+    #pill.empty #pill-score { color: var(--text-muted); font-weight: 400; font-size: 12px; }
+    #pill.empty #pill-label { display: none; }
+    #pill.empty #pill-dot   { background: #ccc; }
+
+    /* ── Gear button (authoring only) ── */
+    #gear-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity .14s, color .14s, border-color .14s;
+    }
+    #wrapper:hover #gear-btn { opacity: 1; }
+    #gear-btn:hover { color: var(--accent); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+<div id="wrapper">
+  <div id="pill">
+    <div id="pill-dot"></div>
+    <span id="pill-score">&#9881; Configure</span>
+    <span id="pill-label">Data quality</span>
+  </div>
+
+  <button id="gear-btn" title="Configure" aria-label="Configure" hidden>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+'use strict';
+
+(function () {
+
+  var tableauReady = false;
+  var MAX_ROWS = 50000;
+
+  var cfg = {
+    sourceWorksheet: '',
+    overallRowValue: '',
+    fieldMappings: { rowTypeField: '', passRateField: '' },
+    display: { greenThreshold: 95, amberThreshold: 80 },
+    demoMode: false,
+  };
+
+  var $pill      = document.getElementById('pill');
+  var $pillDot   = document.getElementById('pill-dot');
+  var $pillScore = document.getElementById('pill-score');
+  var $gearBtn   = document.getElementById('gear-btn');
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+
+  function initTableau() {
+    tableau.extensions.initializeAsync({ configure: openConfig }).then(function () {
+      tableauReady = true;
+      var mode = tableau.extensions.environment.mode;
+      if (!mode || mode === 'authoring') {
+        $gearBtn.hidden = false;
+        $gearBtn.addEventListener('click', openConfig);
+      }
+      tableau.extensions.settings.addEventListener(
+        tableau.TableauEventType.SettingsChanged,
+        function () { loadSavedConfig(); fetchScore(); }
+      );
+      loadSavedConfig();
+      fetchScore();
+    }).catch(function (err) {
+      console.warn('Tableau init failed:', err);
+      showUnconfigured();
+    });
+  }
+
+  function loadSavedConfig() {
+    try {
+      var all = tableau.extensions.settings.getAll();
+      if (all.sourceWorksheet) cfg.sourceWorksheet = all.sourceWorksheet;
+      if (all.overallRowValue) cfg.overallRowValue  = all.overallRowValue;
+      if (all.fieldMappings)   cfg.fieldMappings    = JSON.parse(all.fieldMappings);
+      if (all.display)         cfg.display          = JSON.parse(all.display);
+      if (all.demoMode)        cfg.demoMode         = JSON.parse(all.demoMode);
+    } catch (e) {}
+  }
+
+  // ── Score fetch ───────────────────────────────────────────────────────────────
+
+  function fetchScore() {
+    if (cfg.demoMode) { renderPill(94.3); return; }
+    if (!cfg.sourceWorksheet) { showUnconfigured(); return; }
+
+    var ws = tableau.extensions.dashboardContent.dashboard.worksheets
+      .find(function (w) { return w.name === cfg.sourceWorksheet; });
+    if (!ws) { showUnconfigured(); return; }
+
+    ws.getSummaryDataAsync({ maxRows: MAX_ROWS }).then(function (dt) {
+      var rows = parseDataTable(dt);
+      var fm   = cfg.fieldMappings;
+      var overallRow;
+
+      if (fm.rowTypeField && cfg.overallRowValue) {
+        overallRow = rows.find(function (r) {
+          return String(r[fm.rowTypeField] || '').toLowerCase() === cfg.overallRowValue.toLowerCase();
+        });
+      }
+      overallRow = overallRow || rows[0] || {};
+
+      var score = parseScore(overallRow[fm.passRateField + '__n']);
+      renderPill(score);
+    }).catch(function () { showUnconfigured(); });
+  }
+
+  function parseDataTable(dt) {
+    var cols = dt.columns.map(function (c) { return c.fieldName; });
+    return dt.data.map(function (row) {
+      var obj = {};
+      cols.forEach(function (col, i) {
+        obj[col]          = row[i].formattedValue;
+        obj[col + '__n']  = row[i].nativeValue;
+      });
+      return obj;
+    });
+  }
+
+  function parseScore(native) {
+    var v = parseFloat(native);
+    if (isNaN(v)) return null;
+    if (v > 0 && v <= 1) v = v * 100;
+    return Math.round(v * 10) / 10;
+  }
+
+  function scoreColor(score) {
+    if (score === null) return '#9E9E9E';
+    var g = parseFloat(cfg.display.greenThreshold) || 95;
+    var a = parseFloat(cfg.display.amberThreshold) || 80;
+    if (score >= g) return '#2E7D32';
+    if (score >= a) return '#D4782F';
+    return '#C62828';
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+
+  function renderPill(score) {
+    $pill.classList.remove('empty');
+    $pillDot.style.background  = scoreColor(score);
+    $pillScore.textContent     = score !== null ? score.toFixed(1) + '%' : '—';
+  }
+
+  function showUnconfigured() {
+    $pill.classList.add('empty');
+    $pillDot.style.background = '#ccc';
+    $pillScore.textContent    = 'Configure';
+  }
+
+  // ── Open panel ────────────────────────────────────────────────────────────────
+
+  function openPanel() {
+    if (!tableauReady) return;
+    var url = window.location.href.replace(/\/[^\/]*$/, '/panel.html');
+    tableau.extensions.ui.displayDialogAsync(url, '', { height: 720, width: 460, title: '' })
+      .catch(function (err) {
+        if (err.errorCode !== tableau.ErrorCodes.DialogClosedByUser) {
+          console.error('Panel error:', err);
+        }
+      });
+  }
+
+  function openConfig() {
+    if (!tableauReady) return;
+    var url = window.location.href.replace(/\/[^\/]*$/, '/dialog.html');
+    tableau.extensions.ui.displayDialogAsync(url, '', { height: 680, width: 620 })
+      .then(function (result) {
+        if (result === 'saved') { loadSavedConfig(); fetchScore(); }
+      })
+      .catch(function (err) {
+        if (err.errorCode !== tableau.ErrorCodes.DialogClosedByUser) {
+          console.error('Dialog error:', err);
+        }
+      });
+  }
+
+  $pill.addEventListener('click', function () {
+    if ($pill.classList.contains('empty')) openConfig();
+    else openPanel();
+  });
+
+  window.addEventListener('load', initTableau);
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <link rel="stylesheet" href="dialog.css" />
+</head>
+<body>
+<div id="config-panel">
+
+  <div id="config-header">
+    <div>
+      <h2>Configure — Renewal Watchlist</h2>
+      <p class="header-sub">Set up your extension options</p>
+    </div>
+    <button id="config-close" onclick="cancelConfig()">&#215;</button>
+  </div>
+
+  <div id="config-tabs">
+    <button class="ctab active" data-tab="main">Settings</button>
+    <button class="ctab" data-tab="filters">Filters</button>
+  </div>
+
+  <div id="config-body">
+
+    <div class="tab-pane active" id="tab-main">
+      <div class="section-title">Worksheet</div>
+      <div class="field-group">
+        <label>Source Worksheet <span style="color:var(--danger)">*</span></label>
+        <select id="ws-source"><option value="">— select worksheet —</option></select>
+        <div class="field-hint">The worksheet that feeds this extension</div>
+      </div>
+
+      <div class="section-title">Field Mapping</div>
+
+      <div class="field-group">
+        <label>Expiry Date <span style="color:var(--danger)">*</span></label>
+        <select id="fld-expiry-date"><option value="">— select field —</option></select>
+        <div class="field-hint">Drives the fixed Window filter (30d/60d/90d/120d/180d/365d)</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Tenant Name <span style="color:var(--danger)">*</span></label>
+          <select id="fld-tenant-name"><option value="">— select field —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Unit / Suite Code</label>
+          <select id="fld-unit-code"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Area (M&sup2;) <span style="color:var(--danger)">*</span></label>
+        <select id="fld-area"><option value="">— select field —</option></select>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Current Rate/M&sup2;</label>
+          <select id="fld-current-rate"><option value="">— none —</option></select>
+          <div class="field-hint">Blank for a row means it's a new/vacant unit (OPEN)</div>
+        </div>
+        <div class="field-group">
+          <label>New Rate/M&sup2; <span style="color:var(--danger)">*</span></label>
+          <select id="fld-new-rate"><option value="">— select field —</option></select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Current Rent</label>
+          <select id="fld-current-rent"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>New Rent <span style="color:var(--danger)">*</span></label>
+          <select id="fld-new-rent"><option value="">— select field —</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab-filters">
+      <div class="section-title">Filters</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5;">
+        Add up to 6 filters based on any column in the source worksheet. Date columns automatically render as a date-range pill at runtime; other columns render as a searchable multi/single-select pill.
+      </p>
+      <div class="filter-list" id="filter-list"></div>
+      <div class="add-stage-row">
+        <button id="btn-add-filter">+ Add Filter</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="config-footer">
+    <button class="form-btn secondary" onclick="cancelConfig()">Cancel</button>
+    <button class="form-btn" id="btn-save">Save &amp; Apply</button>
+  </div>
+
+</div>
+<script src="js/dialog.js"></script>
+</body>
+</html>

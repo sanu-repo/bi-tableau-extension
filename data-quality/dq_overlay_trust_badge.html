@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DQ Overlay — Trust Badge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFBFC;
+    --surface: #FFFFFF;
+    --border-light: #E1E4E8;
+    --border: #C7CBD1;
+    --text-primary: #161A1F;
+    --text-secondary: #57606A;
+    --text-tertiary: #8B939C;
+    --accent: #1E4D8B;
+    --accent-hover: #163A6B;
+    --pass: #2C6845;
+    --pass-bg: #E8F0EB;
+    --warn: #8E5A16;
+    --warn-bg: #F4EDDE;
+    --fail: #8A2E31;
+    --fail-bg: #F4E4E5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Business dashboard */
+  .dashboard-header {
+    padding: 20px 32px 8px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-light);
+  }
+  .dashboard-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .dashboard-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+  .dashboard-refresh { font-size: 12px; color: var(--text-tertiary); }
+  .dashboard {
+    padding: 24px 32px 32px;
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    padding: 20px 20px 16px;
+  }
+  .kpi-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+  .kpi-value {
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.8px;
+    margin: 10px 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi-delta {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  .kpi-delta.up { color: var(--pass); }
+  .kpi-delta.down { color: var(--fail); }
+
+  .chart-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    padding: 20px;
+    min-height: 240px;
+  }
+  .chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    height: 160px;
+    padding-top: 20px;
+  }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .bar { width: 100%; background: var(--accent); opacity: 0.85; border-radius: 2px 2px 0 0; }
+  .bar-label { font-size: 11px; color: var(--text-secondary); }
+  .donut-chart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 180px;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    background: repeating-linear-gradient(45deg, transparent, transparent 8px, var(--border-light) 8px, var(--border-light) 9px);
+    border-radius: 4px;
+  }
+
+  /* Trust Badge — floating corner pill */
+  .trust-badge {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 16px 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    z-index: 20;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .trust-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  }
+  .tb-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--warn);
+    flex-shrink: 0;
+  }
+  .tb-dot.pass { background: var(--pass); }
+  .tb-dot.warn { background: var(--warn); }
+  .tb-dot.fail { background: var(--fail); }
+  .badge-score {
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .badge-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  /* Slide-out panel */
+  .panel-scrim {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(20, 24, 32, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 30;
+  }
+  .panel-scrim.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 480px;
+    max-width: 100vw;
+    background: var(--surface);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel.open { transform: translateX(0); }
+  .panel-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .panel-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+  }
+  .panel-close:hover { color: var(--text-primary); }
+  .panel-eyebrow {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .panel-title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .panel-tabs {
+    display: flex;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border-light);
+    gap: 24px;
+  }
+  .panel-tab {
+    background: none;
+    border: none;
+    padding: 12px 0;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .panel-tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
+  }
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Score summary block */
+  .score-hero {
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .score-large {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .score-large-num {
+    font-size: 42px;
+    font-weight: 600;
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .score-large-pct {
+    font-size: 18px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+  }
+  .score-caption {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .score-summary-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+  }
+  .summary-item-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+  .summary-item-value {
+    font-size: 16px;
+    font-weight: 500;
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .summary-item-value.fail { color: var(--fail); }
+
+  /* Dimension bars */
+  .dim-block { margin-bottom: 16px; }
+  .dim-block-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .dim-block-name { font-size: 13px; font-weight: 500; }
+  .dim-block-score {
+    font-size: 13px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .dim-bar-track {
+    height: 6px;
+    background: var(--border-light);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .dim-bar-fill { height: 100%; border-radius: 3px; }
+  .dim-bar-fill.pass { background: var(--pass); }
+  .dim-bar-fill.warn { background: var(--warn); }
+  .dim-bar-fill.fail { background: var(--fail); }
+  .dim-block-meta {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 6px;
+  }
+
+  /* Rules tab */
+  .rule-table-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-light);
+    align-items: center;
+  }
+  .rule-table-row:last-child { border-bottom: none; }
+  .rule-table-id {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-secondary);
+    font-size: 11px;
+  }
+  .rule-table-name { font-size: 13px; font-weight: 500; }
+  .rule-table-detail { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+  .rule-table-fails {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .rule-table-fails.has-fails { color: var(--fail); }
+
+  /* Failing records tab */
+  .records-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .records-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .records-count strong { color: var(--fail); font-variant-numeric: tabular-nums; }
+  .records-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .records-btn:hover { background: var(--accent-hover); }
+  .records-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .records-table th {
+    text-align: left;
+    padding: 8px 8px 6px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .records-table td {
+    padding: 8px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: top;
+  }
+  .records-table td.mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .records-table td.reason { color: var(--fail); font-size: 11px; }
+</style>
+</head>
+<body>
+
+<!-- Business dashboard -->
+<div class="dashboard-header">
+  <div>
+    <div class="dashboard-title">Property Customer Overview</div>
+    <div class="dashboard-subtitle">Development vertical · Q3 FY26</div>
+  </div>
+  <div class="dashboard-refresh">Refreshed 08:14 · Tableau</div>
+</div>
+
+<div class="dashboard">
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Active customers</div>
+      <div class="kpi-value">47,892</div>
+      <div class="kpi-delta up">↑ 3.2% vs last quarter</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Contact coverage</div>
+      <div class="kpi-value">87.3%</div>
+      <div class="kpi-delta">↔ flat</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">New registrations (Q3)</div>
+      <div class="kpi-value">3,241</div>
+      <div class="kpi-delta up">↑ 12.1% vs Q2</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg days to close</div>
+      <div class="kpi-value">62.4</div>
+      <div class="kpi-delta down">↑ 4.1 days</div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-card">
+      <div class="chart-title">Registrations by segment · Q3</div>
+      <div class="bar-chart">
+        <div class="bar-col"><div class="bar" style="height: 78%;"></div><div class="bar-label">Investor</div></div>
+        <div class="bar-col"><div class="bar" style="height: 65%;"></div><div class="bar-label">End user</div></div>
+        <div class="bar-col"><div class="bar" style="height: 42%;"></div><div class="bar-label">Corporate</div></div>
+        <div class="bar-col"><div class="bar" style="height: 34%;"></div><div class="bar-label">GCC national</div></div>
+        <div class="bar-col"><div class="bar" style="height: 28%;"></div><div class="bar-label">Foreign</div></div>
+        <div class="bar-col"><div class="bar" style="height: 22%;"></div><div class="bar-label">Other</div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Customer type distribution</div>
+      <div class="donut-chart">chart placeholder</div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating badge -->
+<div class="trust-badge" onclick="openPanel()">
+  <span class="tb-dot warn"></span>
+  <span class="badge-score tabular">94.3%</span>
+  <span class="badge-label">Data quality</span>
+</div>
+
+<!-- Slide-out panel -->
+<div class="panel-scrim" id="panel-scrim" onclick="closePanel()"></div>
+
+<div class="panel" id="panel">
+  <div class="panel-header">
+    <button class="panel-close" onclick="closePanel()">×</button>
+    <div class="panel-eyebrow">Property Customer Overview</div>
+    <div class="panel-title">Data quality</div>
+  </div>
+
+  <div class="panel-tabs">
+    <button class="panel-tab active" onclick="showTab(event, 'summary')">Summary</button>
+    <button class="panel-tab" onclick="showTab(event, 'rules')">Rules</button>
+    <button class="panel-tab" onclick="showTab(event, 'records')">Failing records</button>
+  </div>
+
+  <div class="panel-body">
+
+    <div class="tab-panel active" id="tab-summary">
+      <div class="score-hero">
+        <div class="score-large">
+          <span class="score-large-num">94.3</span>
+          <span class="score-large-pct">% pass rate</span>
+        </div>
+        <div class="score-caption">
+          18 rules ran 2 hours ago across 6 tables. 2,734 of 47,892 records failed at least one rule.
+          Overall trend flat over the last 7 days.
+        </div>
+        <div class="score-summary-row">
+          <div>
+            <div class="summary-item-label">Rules</div>
+            <div class="summary-item-value tabular">18</div>
+          </div>
+          <div>
+            <div class="summary-item-label">Failures</div>
+            <div class="summary-item-value fail tabular">2,734</div>
+          </div>
+          <div>
+            <div class="summary-item-label">Blocking</div>
+            <div class="summary-item-value tabular">0</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">By dimension</h3>
+
+      <div class="dim-block">
+        <div class="dim-block-head">
+          <span class="dim-block-name">Completeness</span>
+          <span class="dim-block-score tabular">96.2%</span>
+        </div>
+        <div class="dim-bar-track"><div class="dim-bar-fill pass" style="width: 96.2%;"></div></div>
+        <div class="dim-block-meta">982 rows failed · 4 bindings</div>
+      </div>
+      <div class="dim-block">
+        <div class="dim-block-head">
+          <span class="dim-block-name">Validity</span>
+          <span class="dim-block-score tabular">91.4%</span>
+        </div>
+        <div class="dim-bar-track"><div class="dim-bar-fill warn" style="width: 91.4%;"></div></div>
+        <div class="dim-block-meta">1,458 rows failed · 7 bindings</div>
+      </div>
+      <div class="dim-block">
+        <div class="dim-block-head">
+          <span class="dim-block-name">Uniqueness</span>
+          <span class="dim-block-score tabular">99.8%</span>
+        </div>
+        <div class="dim-bar-track"><div class="dim-bar-fill pass" style="width: 99.8%;"></div></div>
+        <div class="dim-block-meta">94 rows failed · 4 bindings</div>
+      </div>
+      <div class="dim-block">
+        <div class="dim-block-head">
+          <span class="dim-block-name">Consistency</span>
+          <span class="dim-block-score tabular">97.1%</span>
+        </div>
+        <div class="dim-bar-track"><div class="dim-bar-fill pass" style="width: 97.1%;"></div></div>
+        <div class="dim-block-meta">200 rows failed · 3 bindings</div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-rules">
+      <div class="rule-table-row">
+        <div class="rule-table-id">RUL-0007</div>
+        <div>
+          <div class="rule-table-name">Email validity</div>
+          <div class="rule-table-detail">Validity · applied to personemail across 2 bindings</div>
+        </div>
+        <div class="rule-table-fails has-fails">1,203</div>
+      </div>
+      <div class="rule-table-row">
+        <div class="rule-table-id">RUL-0001</div>
+        <div>
+          <div class="rule-table-name">Emirates ID validity</div>
+          <div class="rule-table-detail">Validity · applied to nationalidnumber__pc</div>
+        </div>
+        <div class="rule-table-fails has-fails">892</div>
+      </div>
+      <div class="rule-table-row">
+        <div class="rule-table-id">RUL-0003</div>
+        <div>
+          <div class="rule-table-name">Completeness — Gender</div>
+          <div class="rule-table-detail">Completeness · applied to gender__pc</div>
+        </div>
+        <div class="rule-table-fails has-fails">421</div>
+      </div>
+      <div class="rule-table-row">
+        <div class="rule-table-id">RUL-0003</div>
+        <div>
+          <div class="rule-table-name">Completeness — Nationality</div>
+          <div class="rule-table-detail">Completeness · applied to nationality__pc</div>
+        </div>
+        <div class="rule-table-fails has-fails">218</div>
+      </div>
+      <div class="rule-table-row">
+        <div class="rule-table-id">RUL-0004</div>
+        <div>
+          <div class="rule-table-name">Uniqueness</div>
+          <div class="rule-table-detail">Uniqueness · 4 bindings, all passing</div>
+        </div>
+        <div class="rule-table-fails">0</div>
+      </div>
+      <div class="rule-table-row">
+        <div class="rule-table-id">RUL-0010</div>
+        <div>
+          <div class="rule-table-name">Referential integrity — Nationality lookup</div>
+          <div class="rule-table-detail">Integrity · applied to nationality__pc</div>
+        </div>
+        <div class="rule-table-fails">0</div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-records">
+      <div class="records-header">
+        <div class="records-count"><strong>2,734</strong> failing records · latest run</div>
+        <button class="records-btn">Download CSV</button>
+      </div>
+      <table class="records-table">
+        <thead>
+          <tr>
+            <th>Account #</th>
+            <th>Rule</th>
+            <th>Column</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">SF-9482737</td>
+            <td class="mono">RUL-0007</td>
+            <td>personemail</td>
+            <td class="reason">Missing domain</td>
+          </tr>
+          <tr>
+            <td class="mono">SF-9482514</td>
+            <td class="mono">RUL-0001</td>
+            <td>nationalidnumber__pc</td>
+            <td class="reason">Wrong length (14 digits)</td>
+          </tr>
+          <tr>
+            <td class="mono">SF-9482492</td>
+            <td class="mono">RUL-0003</td>
+            <td>gender__pc</td>
+            <td class="reason">Null value</td>
+          </tr>
+          <tr>
+            <td class="mono">SF-9482398</td>
+            <td class="mono">RUL-0007</td>
+            <td>personemail</td>
+            <td class="reason">Invalid format</td>
+          </tr>
+          <tr>
+            <td class="mono">SF-9482201</td>
+            <td class="mono">RUL-0001</td>
+            <td>nationalidnumber__pc</td>
+            <td class="reason">Non-numeric characters</td>
+          </tr>
+          <tr>
+            <td class="mono">SF-9481893</td>
+            <td class="mono">RUL-0003</td>
+            <td>nationality__pc</td>
+            <td class="reason">Null value</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 12px; text-align: center;">Showing 6 of 2,734 · download for the full list</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openPanel() {
+    document.getElementById('panel').classList.add('open');
+    document.getElementById('panel-scrim').classList.add('open');
+  }
+  function closePanel() {
+    document.getElementById('panel').classList.remove('open');
+    document.getElementById('panel-scrim').classList.remove('open');
+  }
+  function showTab(e, id) {
+    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById('tab-' + id).classList.add('active');
+  }
+</script>
+
+</body>
+</html>

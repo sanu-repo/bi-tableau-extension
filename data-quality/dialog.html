@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configure — Data Quality</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <link rel="stylesheet" href="dialog.css" />
+</head>
+<body>
+<div id="config-panel">
+
+  <div id="config-header">
+    <div>
+      <h2>Configure — Data Quality</h2>
+      <p class="header-sub">Map worksheets and fields, then set display options</p>
+    </div>
+    <button id="config-close" onclick="cancelConfig()">&#215;</button>
+  </div>
+
+  <div id="config-tabs">
+    <button class="ctab active" data-tab="data">Data</button>
+    <button class="ctab" data-tab="display">Display</button>
+  </div>
+
+  <div id="config-body">
+
+    <!-- ── DATA TAB ── -->
+    <div class="tab-pane active" id="tab-data">
+
+      <!-- Summary worksheet -->
+      <div class="section-title">Summary Worksheet</div>
+
+      <div class="field-group">
+        <label>Source Worksheet <span style="color:var(--danger)">*</span></label>
+        <select id="ws-summary"><option value="">— select worksheet —</option></select>
+        <div class="field-hint">Sheet containing the overall pass rate and per-dimension rows</div>
+      </div>
+
+      <div class="field-group">
+        <label>Row type field <span style="color:var(--danger)">*</span></label>
+        <select id="fld-row-type"><option value="">— select field —</option></select>
+        <div class="field-hint">Field that distinguishes the overall summary row from dimension rows (e.g. "Category")</div>
+      </div>
+
+      <div class="field-group">
+        <label>Overall row identifier <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="inp-overall-value" placeholder='e.g. "Overall" or "Summary"' maxlength="100" />
+        <div class="field-hint">Value in the row type field that marks the summary/overall row</div>
+      </div>
+
+      <div class="section-title" style="margin-top:14px;">Overall Row Fields</div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Pass rate <span style="color:var(--danger)">*</span></label>
+          <select id="fld-pass-rate"><option value="">— select field —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Rules count</label>
+          <select id="fld-rules-count"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Total failures</label>
+          <select id="fld-failures"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Blocking failures</label>
+          <select id="fld-blocking"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Total records</label>
+          <select id="fld-total-records"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Tables scanned</label>
+          <select id="fld-tables"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Run time text</label>
+        <select id="fld-run-time"><option value="">— none —</option></select>
+        <div class="field-hint">Text field like "2 hours ago" shown in the summary sentence</div>
+      </div>
+
+      <div class="section-title" style="margin-top:14px;">Dimension Row Fields</div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Dimension name <span style="color:var(--danger)">*</span></label>
+          <select id="fld-dim-name"><option value="">— select field —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Dimension score <span style="color:var(--danger)">*</span></label>
+          <select id="fld-dim-score"><option value="">— select field —</option></select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Dimension failures</label>
+          <select id="fld-dim-failures"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Dimension bindings</label>
+          <select id="fld-dim-bindings"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+      <!-- Rules worksheet -->
+      <div class="section-title">Rules Worksheet</div>
+
+      <div class="field-group">
+        <label>Rules Worksheet</label>
+        <select id="ws-rules"><option value="">— none (skip Rules tab) —</option></select>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Rule ID</label>
+          <select id="fld-rule-id"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Rule name</label>
+          <select id="fld-rule-name"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Dimension / type</label>
+          <select id="fld-rule-dim"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Failures count</label>
+          <select id="fld-rule-failures"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Applied-to description</label>
+        <select id="fld-rule-desc"><option value="">— none —</option></select>
+        <div class="field-hint">Text like "applied to personemail across 2 bindings"</div>
+      </div>
+
+      <!-- Failing records worksheet -->
+      <div class="section-title">Failing Records Worksheet</div>
+
+      <div class="field-group">
+        <label>Failing Records Worksheet</label>
+        <select id="ws-failing"><option value="">— none (skip Failing records tab) —</option></select>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Account #</label>
+          <select id="fld-account"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Rule</label>
+          <select id="fld-fail-rule"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Column</label>
+          <select id="fld-fail-column"><option value="">— none —</option></select>
+        </div>
+        <div class="field-group">
+          <label>Reason</label>
+          <select id="fld-fail-reason"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+    </div><!-- /tab-data -->
+
+    <!-- ── DISPLAY TAB ── -->
+    <div class="tab-pane" id="tab-display">
+
+      <div class="section-title">Demo Mode</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Enable demo mode</div>
+          <div class="toggle-desc">Show sample data for stakeholder presentations. Real worksheets are ignored while active.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chk-demo-mode" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="section-title" style="margin-top:18px;">Panel Header</div>
+
+      <div class="field-group">
+        <label>Panel subtitle</label>
+        <input type="text" id="inp-panel-title" placeholder="e.g. PROPERTY CUSTOMER OVERVIEW" maxlength="80" />
+        <div class="field-hint">Small uppercase text shown above "Data quality" in the panel header</div>
+      </div>
+
+      <div class="section-title">Score Thresholds</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">
+        The pill dot colour is determined by the overall pass rate against these thresholds.
+      </p>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Green if score &#8805;</label>
+          <input type="number" id="inp-green-threshold" min="0" max="100" step="1" placeholder="95" />
+          <div class="field-hint">Default: 95%</div>
+        </div>
+        <div class="field-group">
+          <label>Amber if score &#8805;</label>
+          <input type="number" id="inp-amber-threshold" min="0" max="100" step="1" placeholder="80" />
+          <div class="field-hint">Red below this. Default: 80%</div>
+        </div>
+      </div>
+
+      <div class="section-title">Trend Note</div>
+
+      <div class="field-group">
+        <label>Trend text (optional)</label>
+        <input type="text" id="inp-trend-text" placeholder="e.g. Overall trend flat over the last 7 days." maxlength="200" />
+        <div class="field-hint">Shown as an italic note at the bottom of the Summary tab. Leave blank to hide.</div>
+      </div>
+
+    </div><!-- /tab-display -->
+
+  </div><!-- /config-body -->
+
+  <div id="config-footer">
+    <button class="form-btn secondary" onclick="cancelConfig()">Cancel</button>
+    <button class="form-btn" id="btn-save">Save &amp; Apply</button>
+  </div>
+
+</div>
+<script src="dialog.js"></script>
+</body>
+</html>

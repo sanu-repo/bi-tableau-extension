@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DQ Overlay — Trust Bar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFBFC;
+    --surface: #FFFFFF;
+    --border-light: #E1E4E8;
+    --border: #C7CBD1;
+    --text-primary: #161A1F;
+    --text-secondary: #57606A;
+    --text-tertiary: #8B939C;
+    --accent: #1E4D8B;
+    --accent-hover: #163A6B;
+    --pass: #2C6845;
+    --pass-bg: #E8F0EB;
+    --warn: #8E5A16;
+    --warn-bg: #F4EDDE;
+    --fail: #8A2E31;
+    --fail-bg: #F4E4E5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Trust Bar */
+  .trust-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .tb-score {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-right: 32px;
+    border-right: 1px solid var(--border-light);
+  }
+  .tb-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--warn);
+    flex-shrink: 0;
+  }
+  .tb-dot.pass { background: var(--pass); }
+  .tb-dot.warn { background: var(--warn); }
+  .tb-dot.fail { background: var(--fail); }
+  .tb-score-value {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+  }
+  .tb-score-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .tb-stats {
+    display: flex;
+    gap: 32px;
+    flex: 1;
+  }
+  .tb-stat-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+  .tb-stat-value {
+    font-size: 15px;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .tb-stat-value .fail-count { color: var(--fail); }
+  .tb-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+  .tb-expand-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 6px 14px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+  }
+  .tb-expand-btn:hover { background: var(--border-light); }
+  .tb-chevron {
+    display: inline-block;
+    transition: transform 0.2s;
+  }
+  .tb-expand-btn.expanded .tb-chevron { transform: rotate(180deg); }
+
+  /* Expanded detail panel */
+  .tb-detail {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+  .tb-detail.open { max-height: 900px; }
+  .tb-detail-inner {
+    padding: 24px 32px;
+    display: grid;
+    grid-template-columns: 240px 1fr 1fr;
+    gap: 32px;
+  }
+  .tb-detail-block h3 {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .dim-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+  }
+  .dim-row:last-child { border-bottom: none; }
+  .dim-name { color: var(--text-primary); font-weight: 500; }
+  .dim-score {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .rule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .rule-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 13px;
+  }
+  .rule-id {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-secondary);
+    font-size: 11px;
+  }
+  .rule-name { color: var(--text-primary); }
+  .rule-fail-count {
+    font-weight: 500;
+    color: var(--fail);
+    font-variant-numeric: tabular-nums;
+  }
+  .rule-row.pass .rule-fail-count { color: var(--text-tertiary); }
+  .tb-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+  }
+  .action-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 8px 14px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .action-btn:hover { background: var(--bg); border-color: var(--border-light); }
+  .action-btn.primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .action-btn.primary:hover { background: var(--accent-hover); }
+
+  /* Business dashboard */
+  .dashboard-header {
+    padding: 20px 32px 8px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .dashboard-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .dashboard-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+  .dashboard-refresh { font-size: 12px; color: var(--text-tertiary); }
+  .dashboard {
+    padding: 16px 32px 32px;
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    padding: 20px 20px 16px;
+  }
+  .kpi-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+  .kpi-value {
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.8px;
+    margin: 10px 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi-delta {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  .kpi-delta.up { color: var(--pass); }
+  .kpi-delta.down { color: var(--fail); }
+
+  .chart-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    padding: 20px;
+    min-height: 240px;
+  }
+  .chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    height: 160px;
+    padding-top: 20px;
+  }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .bar {
+    width: 100%;
+    background: var(--accent);
+    opacity: 0.85;
+    transition: opacity 0.15s;
+    border-radius: 2px 2px 0 0;
+  }
+  .bar-col:hover .bar { opacity: 1; }
+  .bar-label { font-size: 11px; color: var(--text-secondary); }
+  .donut-chart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 180px;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    background: repeating-linear-gradient(45deg, transparent, transparent 8px, var(--border-light) 8px, var(--border-light) 9px);
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Trust Bar: always visible at the top -->
+<div class="trust-bar">
+  <div class="tb-score">
+    <span class="tb-dot warn"></span>
+    <div>
+      <div class="tb-score-value tabular">94.3<span style="font-size: 14px; color: var(--text-tertiary); font-weight: 500;">%</span></div>
+      <div class="tb-score-label">Data quality</div>
+    </div>
+  </div>
+  <div class="tb-stats">
+    <div>
+      <div class="tb-stat-label">Rules evaluated</div>
+      <div class="tb-stat-value tabular">18 <span style="color: var(--text-tertiary); font-weight: 400; font-size: 13px;">across 6 tables</span></div>
+    </div>
+    <div>
+      <div class="tb-stat-label">Failing records</div>
+      <div class="tb-stat-value tabular"><span class="fail-count">2,734</span> <span style="color: var(--text-tertiary); font-weight: 400; font-size: 13px;">of 47,892</span></div>
+    </div>
+    <div>
+      <div class="tb-stat-label">Blocking issues</div>
+      <div class="tb-stat-value tabular">0</div>
+    </div>
+  </div>
+  <div class="tb-meta">
+    <span>Evaluated 2h ago</span>
+    <button class="tb-expand-btn" onclick="toggleDetail()">
+      <span id="tb-btn-text">View detail</span>
+      <span class="tb-chevron">▾</span>
+    </button>
+  </div>
+</div>
+
+<!-- Expanded detail panel -->
+<div class="tb-detail" id="tb-detail">
+  <div class="tb-detail-inner">
+    <div class="tb-detail-block">
+      <h3>By dimension</h3>
+      <div class="dim-row">
+        <span class="dim-name">Completeness</span>
+        <span class="dim-score"><span class="tb-dot pass"></span><span class="tabular">96.2%</span></span>
+      </div>
+      <div class="dim-row">
+        <span class="dim-name">Validity</span>
+        <span class="dim-score"><span class="tb-dot warn"></span><span class="tabular">91.4%</span></span>
+      </div>
+      <div class="dim-row">
+        <span class="dim-name">Uniqueness</span>
+        <span class="dim-score"><span class="tb-dot pass"></span><span class="tabular">99.8%</span></span>
+      </div>
+      <div class="dim-row">
+        <span class="dim-name">Consistency</span>
+        <span class="dim-score"><span class="tb-dot pass"></span><span class="tabular">97.1%</span></span>
+      </div>
+    </div>
+    <div class="tb-detail-block">
+      <h3>Rules with failures</h3>
+      <div class="rule-list">
+        <div class="rule-row">
+          <span class="rule-id">RUL-0007</span>
+          <span class="rule-name">Email validity</span>
+          <span class="rule-fail-count tabular">1,203</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-id">RUL-0001</span>
+          <span class="rule-name">Emirates ID validity</span>
+          <span class="rule-fail-count tabular">892</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-id">RUL-0003</span>
+          <span class="rule-name">Completeness — Gender</span>
+          <span class="rule-fail-count tabular">421</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-id">RUL-0003</span>
+          <span class="rule-name">Completeness — Nationality</span>
+          <span class="rule-fail-count tabular">218</span>
+        </div>
+        <div class="rule-row pass">
+          <span class="rule-id">RUL-0004</span>
+          <span class="rule-name">Uniqueness — 4 bindings</span>
+          <span class="rule-fail-count tabular">0</span>
+        </div>
+      </div>
+    </div>
+    <div class="tb-detail-block">
+      <h3>What stewards see</h3>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
+        Each failing row is available with its business key (<code class="mono" style="font-size: 12px; background: var(--bg); padding: 2px 4px;">accountnumber__c</code>), the rule that failed, and the failing value. Fix in Salesforce, and the next run reconciles.
+      </p>
+      <a href="#" class="action-btn" style="width: 100%; justify-content: center;">
+        Export 2,734 failing records (CSV)
+      </a>
+    </div>
+    <div class="tb-actions">
+      <a href="#" class="action-btn primary">Open steward view</a>
+      <a href="#" class="action-btn">Rule catalogue</a>
+      <a href="#" class="action-btn">History &amp; trends</a>
+      <div style="flex: 1;"></div>
+      <span style="font-size: 12px; color: var(--text-tertiary); align-self: center;">
+        Next run scheduled for tomorrow at 06:00
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Business dashboard beneath -->
+<div class="dashboard-header">
+  <div>
+    <div class="dashboard-title">Property Customer Overview</div>
+    <div class="dashboard-subtitle">Development vertical · Q3 FY26</div>
+  </div>
+  <div class="dashboard-refresh">Refreshed 08:14 · Tableau</div>
+</div>
+
+<div class="dashboard">
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Active customers</div>
+      <div class="kpi-value">47,892</div>
+      <div class="kpi-delta up">↑ 3.2% vs last quarter</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Contact coverage</div>
+      <div class="kpi-value">87.3%</div>
+      <div class="kpi-delta">↔ flat</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">New registrations (Q3)</div>
+      <div class="kpi-value">3,241</div>
+      <div class="kpi-delta up">↑ 12.1% vs Q2</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg days to close</div>
+      <div class="kpi-value">62.4</div>
+      <div class="kpi-delta down">↑ 4.1 days</div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-card">
+      <div class="chart-title">Registrations by segment · Q3</div>
+      <div class="bar-chart">
+        <div class="bar-col"><div class="bar" style="height: 78%;"></div><div class="bar-label">Investor</div></div>
+        <div class="bar-col"><div class="bar" style="height: 65%;"></div><div class="bar-label">End user</div></div>
+        <div class="bar-col"><div class="bar" style="height: 42%;"></div><div class="bar-label">Corporate</div></div>
+        <div class="bar-col"><div class="bar" style="height: 34%;"></div><div class="bar-label">GCC national</div></div>
+        <div class="bar-col"><div class="bar" style="height: 28%;"></div><div class="bar-label">Foreign</div></div>
+        <div class="bar-col"><div class="bar" style="height: 22%;"></div><div class="bar-label">Other</div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Customer type distribution</div>
+      <div class="donut-chart">chart placeholder</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleDetail() {
+    const detail = document.getElementById('tb-detail');
+    const btn = document.querySelector('.tb-expand-btn');
+    const btnText = document.getElementById('tb-btn-text');
+    detail.classList.toggle('open');
+    btn.classList.toggle('expanded');
+    btnText.textContent = detail.classList.contains('open') ? 'Hide detail' : 'View detail';
+  }
+</script>
+
+</body>
+</html>

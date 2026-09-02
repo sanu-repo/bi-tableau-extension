@@ -5,6 +5,19 @@
   var dashWs      = [];
   var sourceCols  = [];   // [{ fieldName, dataType }]
   var filterList  = [];
+  var columnList  = [];
+  var pendingFieldMappings = null;
+
+  var DEFAULT_COLUMNS = [
+    { id: 'expiry',  label: 'Expiry' },
+    { id: 'inDays',  label: 'In' },
+    { id: 'tenant',  label: 'Tenant' },
+    { id: 'area',    label: 'Area (M²)' },
+    { id: 'rate',    label: 'Rate/M² (Cur → New)' },
+    { id: 'uplift',  label: 'Uplift' },
+    { id: 'newRent', label: 'New Rent' },
+    { id: 'rent',    label: 'Rent' },
+  ];
 
   window.addEventListener('load', function () {
     tableau.extensions.initializeDialogAsync().then(function () {
@@ -59,8 +72,21 @@
       sourceCols = dt.columns.map(function (c) { return { fieldName: c.fieldName, dataType: c.dataType }; });
       var fieldNames = sourceCols.map(function (c) { return c.fieldName; });
       fillFieldSelects('fld-', fieldNames);
+      if (pendingFieldMappings) applyFieldMappings(pendingFieldMappings);
       renderFilterList();
     });
+  }
+
+  function applyFieldMappings(fm) {
+    setVal('fld-expiry-date',   fm.expiryDateField);
+    setVal('fld-tenant-name',   fm.tenantNameField);
+    setVal('fld-unit-code',     fm.unitCodeField);
+    setVal('fld-area',          fm.areaField);
+    setVal('fld-current-rate',  fm.currentRateField);
+    setVal('fld-new-rate',      fm.newRateField);
+    setVal('fld-current-rent',  fm.currentRentField);
+    setVal('fld-new-rent',      fm.newRentField);
+    setVal('fld-rent',          fm.rentField);
   }
 
   function fillFieldSelects(prefix, cols) {
@@ -77,23 +103,68 @@
   }
 
   function applySavedSettings(s) {
+    var fm = s.fieldMappings || {};
+    pendingFieldMappings = fm;
+
     if (s.sourceWorksheet) {
       setVal('ws-source', s.sourceWorksheet);
       loadCols(s.sourceWorksheet);
+    } else {
+      applyFieldMappings(fm);
     }
-    var fm = s.fieldMappings || {};
-    setVal('fld-expiry-date',   fm.expiryDateField);
-    setVal('fld-tenant-name',   fm.tenantNameField);
-    setVal('fld-unit-code',     fm.unitCodeField);
-    setVal('fld-area',          fm.areaField);
-    setVal('fld-current-rate',  fm.currentRateField);
-    setVal('fld-new-rate',      fm.newRateField);
-    setVal('fld-current-rent',  fm.currentRentField);
-    setVal('fld-new-rent',      fm.newRentField);
 
     var fc = s.filterConfig || {};
     filterList = (fc.filters || []).slice();
     renderFilterList();
+
+    var cc = s.columnConfig || {};
+    var savedById = {};
+    (cc.columns || []).forEach(function (c) { savedById[c.id] = c; });
+    columnList = DEFAULT_COLUMNS.map(function (def) {
+      var saved = savedById[def.id];
+      return {
+        id: def.id,
+        defaultLabel: def.label,
+        label: (saved && saved.label) || def.label,
+        visible: def.id === 'tenant' ? true : (saved ? !!saved.visible : true),
+      };
+    });
+    renderColumnList();
+  }
+
+  function renderColumnList() {
+    var $list = document.getElementById('column-list');
+    if (!$list) return;
+    $list.innerHTML = '';
+
+    columnList.forEach(function (col, i) {
+      var item = document.createElement('div');
+      item.className = 'column-item';
+
+      var checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = col.visible;
+      if (col.id === 'tenant') {
+        checkbox.checked = true;
+        checkbox.disabled = true;
+      } else {
+        checkbox.addEventListener('change', function () { columnList[i].visible = checkbox.checked; });
+      }
+
+      var labelInp = document.createElement('input');
+      labelInp.type = 'text';
+      labelInp.value = col.label;
+      labelInp.placeholder = col.defaultLabel;
+      labelInp.addEventListener('input', function () { columnList[i].label = labelInp.value; });
+
+      item.appendChild(checkbox);
+      item.appendChild(labelInp);
+      if (col.id === 'tenant') {
+        var hint = document.createElement('span'); hint.className = 'column-hint'; hint.textContent = 'Always shown';
+        item.appendChild(hint);
+      }
+      $list.appendChild(item);
+    });
   }
 
   // ── Filter manager (dynamic column discovery) ───────────────────────────
@@ -169,7 +240,21 @@
 
   // ── Save ──────────────────────────────────────────────────────────────────
 
+  function showSaveMessage(msg) {
+    var $err = document.getElementById('save-error');
+    if (!$err) return;
+    $err.textContent = msg;
+    $err.hidden = !msg;
+  }
+
   function saveAndClose() {
+    showSaveMessage('');
+
+    if (!getVal('ws-source') || !getVal('fld-tenant-name')) {
+      showSaveMessage('Select a Source Worksheet and map Tenant Name before saving.');
+      return;
+    }
+
     var $btn = document.getElementById('btn-save');
     $btn.textContent = 'Saving…'; $btn.disabled = true;
 
@@ -184,6 +269,7 @@
       newRateField:     getVal('fld-new-rate'),
       currentRentField: getVal('fld-current-rent'),
       newRentField:     getVal('fld-new-rent'),
+      rentField:        getVal('fld-rent'),
     }));
 
     var cleanedFilters = filterList
@@ -197,9 +283,24 @@
       });
     tableau.extensions.settings.set('filterConfig', JSON.stringify({ filters: cleanedFilters }));
 
+    tableau.extensions.settings.set('columnConfig', JSON.stringify({
+      columns: columnList.map(function (c) {
+        return {
+          id: c.id,
+          label: (c.label && c.label.trim()) || c.defaultLabel,
+          visible: c.id === 'tenant' ? true : !!c.visible,
+        };
+      }),
+    }));
+
     tableau.extensions.settings.saveAsync()
-      .then(function ()  { tableau.extensions.ui.closeDialog('saved'); })
-      .catch(function () { tableau.extensions.ui.closeDialog('saved'); });
+      .then(function () {
+        tableau.extensions.ui.closeDialog('saved');
+      })
+      .catch(function () {
+        $btn.textContent = 'Save & Apply'; $btn.disabled = false;
+        showSaveMessage('Save failed — please try again.');
+      });
   }
 
   function setVal(id, val) { var el = document.getElementById(id); if (el && val) el.value = val; }

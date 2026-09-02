@@ -22,6 +22,7 @@
 
   <div id="config-tabs">
     <button class="ctab active" data-tab="main">Settings</button>
+    <button class="ctab" data-tab="columns">Columns</button>
     <button class="ctab" data-tab="filters">Filters</button>
   </div>
 
@@ -38,8 +39,8 @@
       <div class="section-title">Field Mapping</div>
 
       <div class="field-group">
-        <label>Expiry Date <span style="color:var(--danger)">*</span></label>
-        <select id="fld-expiry-date"><option value="">— select field —</option></select>
+        <label>Expiry Date</label>
+        <select id="fld-expiry-date"><option value="">— none —</option></select>
         <div class="field-hint">Drives the fixed Window filter (30d/60d/90d/120d/180d/365d)</div>
       </div>
 
@@ -55,8 +56,8 @@
       </div>
 
       <div class="field-group">
-        <label>Area (M&sup2;) <span style="color:var(--danger)">*</span></label>
-        <select id="fld-area"><option value="">— select field —</option></select>
+        <label>Area (M&sup2;)</label>
+        <select id="fld-area"><option value="">— none —</option></select>
       </div>
 
       <div class="field-row">
@@ -66,8 +67,8 @@
           <div class="field-hint">Blank for a row means it's a new/vacant unit (OPEN)</div>
         </div>
         <div class="field-group">
-          <label>New Rate/M&sup2; <span style="color:var(--danger)">*</span></label>
-          <select id="fld-new-rate"><option value="">— select field —</option></select>
+          <label>New Rate/M&sup2;</label>
+          <select id="fld-new-rate"><option value="">— none —</option></select>
         </div>
       </div>
 
@@ -77,10 +78,24 @@
           <select id="fld-current-rent"><option value="">— none —</option></select>
         </div>
         <div class="field-group">
-          <label>New Rent <span style="color:var(--danger)">*</span></label>
-          <select id="fld-new-rent"><option value="">— select field —</option></select>
+          <label>New Rent</label>
+          <select id="fld-new-rent"><option value="">— none —</option></select>
         </div>
       </div>
+
+      <div class="field-group">
+        <label>Rent</label>
+        <select id="fld-rent"><option value="">— none —</option></select>
+        <div class="field-hint">Standalone Rent column, independent of Current/New Rent above</div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab-columns">
+      <div class="section-title">Columns</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5;">
+        Choose which columns appear on the table and customize their labels. Tenant is always shown.
+      </p>
+      <div class="filter-list" id="column-list"></div>
     </div>
 
     <div class="tab-pane" id="tab-filters">
@@ -97,6 +112,7 @@
   </div>
 
   <div id="config-footer">
+    <div id="save-error" class="save-error" hidden></div>
     <button class="form-btn secondary" onclick="cancelConfig()">Cancel</button>
     <button class="form-btn" id="btn-save">Save &amp; Apply</button>
   </div>

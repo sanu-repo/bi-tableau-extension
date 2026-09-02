@@ -34,14 +34,26 @@
   var $emptyState    = document.getElementById('empty-state');
   var $gearBtn       = document.getElementById('gear-btn');
 
+  var DEFAULT_COLUMNS = [
+    { id: 'expiry',  label: 'Expiry' },
+    { id: 'inDays',  label: 'In' },
+    { id: 'tenant',  label: 'Tenant' },
+    { id: 'area',    label: 'Area (M²)' },
+    { id: 'rate',    label: 'Rate/M² (Cur → New)' },
+    { id: 'uplift',  label: 'Uplift' },
+    { id: 'newRent', label: 'New Rent' },
+    { id: 'rent',    label: 'Rent' },
+  ];
+
   var cfg = {
     sourceWorksheet: '',
     fieldMappings: {
       expiryDateField: '', tenantNameField: '', unitCodeField: '',
       areaField: '', currentRateField: '', newRateField: '',
-      currentRentField: '', newRentField: '',
+      currentRentField: '', newRentField: '', rentField: '',
     },
     filterConfig: { filters: [] },
+    columnConfig: { columns: DEFAULT_COLUMNS.map(function (c) { return { id: c.id, label: c.label, visible: true }; }) },
   };
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -77,7 +89,21 @@
       if (all.sourceWorksheet) cfg.sourceWorksheet = all.sourceWorksheet;
       if (all.fieldMappings)   cfg.fieldMappings   = JSON.parse(all.fieldMappings);
       if (all.filterConfig)    cfg.filterConfig    = JSON.parse(all.filterConfig);
+      if (all.columnConfig)    mergeColumnConfig(JSON.parse(all.columnConfig));
     } catch (e) { console.warn('Failed to parse saved settings:', e); }
+  }
+
+  function mergeColumnConfig(saved) {
+    var savedById = {};
+    (saved.columns || []).forEach(function (c) { savedById[c.id] = c; });
+    cfg.columnConfig.columns = DEFAULT_COLUMNS.map(function (def) {
+      var s = savedById[def.id];
+      return {
+        id: def.id,
+        label: (s && s.label && s.label.trim()) || def.label,
+        visible: def.id === 'tenant' ? true : (s ? !!s.visible : true),
+      };
+    });
   }
 
   function openConfig() {
@@ -95,9 +121,7 @@
   }
 
   function hasRequiredMappings() {
-    var fld = cfg.fieldMappings;
-    return !!(fld.expiryDateField && fld.tenantNameField && fld.areaField &&
-              fld.newRateField && fld.newRentField);
+    return !!cfg.fieldMappings.tenantNameField;
   }
 
   // ── Data fetch ───────────────────────────────────────────────────────────
@@ -183,6 +207,7 @@
     var currentRent = parseNumeric(row['__raw__' + fld.currentRentField]);
     var newRate     = parseNumeric(row['__raw__' + fld.newRateField]);
     var newRent     = parseNumeric(row['__raw__' + fld.newRentField]);
+    var rent        = parseNumeric(row['__raw__' + fld.rentField]);
     var hasCurrent  = isFiniteNum(currentRate) || isFiniteNum(currentRent);
 
     var upliftPct = null, rentDelta = null;
@@ -199,6 +224,7 @@
       hasCurrent: hasCurrent, isOpen: !hasCurrent,
       currentRate: currentRate, newRate: newRate,
       currentRent: currentRent, newRent: newRent,
+      rent: rent,
       upliftPct: upliftPct, rentDelta: rentDelta,
     };
   }
@@ -607,8 +633,159 @@
 
   // ── Table rendering ──────────────────────────────────────────────────────
 
+  var COLUMN_DEFS = {
+    expiry: {
+      numeric: false,
+      cell: function (ctx) {
+        var td = document.createElement('td'); td.textContent = formatDate(ctx.date); return td;
+      },
+      summary: null,
+    },
+    inDays: {
+      numeric: false,
+      cell: function (ctx) {
+        var td = document.createElement('td'); td.className = 'col-in';
+        td.textContent = ctx.inDays !== null ? '+' + ctx.inDays + 'd' : '—';
+        return td;
+      },
+      summary: null,
+    },
+    tenant: {
+      numeric: false,
+      cell: function (ctx) {
+        var fld = cfg.fieldMappings;
+        var td = document.createElement('td');
+        var tenantCell = document.createElement('div'); tenantCell.className = 'tenant-cell';
+        var nameSpan = document.createElement('span'); nameSpan.className = 'tenant-name';
+        nameSpan.textContent = ctx.row[fld.tenantNameField] || '—';
+        tenantCell.appendChild(nameSpan);
+        if (fld.unitCodeField) {
+          var codeVal = ctx.row[fld.unitCodeField];
+          if (codeVal) {
+            var badge = document.createElement('span'); badge.className = 'unit-badge'; badge.textContent = codeVal;
+            tenantCell.appendChild(badge);
+          }
+        }
+        td.appendChild(tenantCell);
+        return td;
+      },
+      summary: null,
+    },
+    area: {
+      numeric: true,
+      cell: function (ctx) {
+        var fld = cfg.fieldMappings;
+        var td = document.createElement('td'); td.className = 'num';
+        td.textContent = fld.areaField ? formatNum(parseNumeric(ctx.row['__raw__' + fld.areaField])) : '—';
+        return td;
+      },
+      summary: null,
+    },
+    rate: {
+      numeric: true,
+      cell: function (ctx) {
+        var d = ctx.derived;
+        var td = document.createElement('td'); td.className = 'num';
+        td.textContent = d.hasCurrent
+          ? formatNum(d.currentRate) + ' → ' + formatNum(d.newRate)
+          : formatNum(d.newRate);
+        return td;
+      },
+      summary: function () {
+        return document.createElement('td');
+      },
+    },
+    uplift: {
+      numeric: true,
+      cell: function (ctx) {
+        var d = ctx.derived;
+        var td = document.createElement('td'); td.className = 'num';
+        if (d.upliftPct === null) {
+          td.textContent = '—';
+        } else if (d.upliftPct > 0) {
+          td.textContent = formatSignedPct(d.upliftPct); td.className += ' uplift-pos';
+        } else if (d.upliftPct < 0) {
+          td.textContent = formatSignedPct(d.upliftPct); td.className += ' uplift-neg';
+        } else {
+          td.textContent = formatSignedPct(d.upliftPct); td.className += ' uplift-neutral';
+        }
+        return td;
+      },
+      summary: function (agg) {
+        var td = document.createElement('td'); td.className = 'num';
+        td.textContent = agg.aggUpliftPct === null ? '—' : formatSignedPct(agg.aggUpliftPct);
+        return td;
+      },
+    },
+    newRent: {
+      numeric: true,
+      cell: function (ctx) {
+        var d = ctx.derived;
+        var td = document.createElement('td'); td.className = 'new-rent-cell';
+        var amountSpan = document.createElement('span'); amountSpan.className = 'new-rent-amount';
+        amountSpan.textContent = formatCurrency(d.newRent);
+        td.appendChild(amountSpan);
+        if (d.isOpen) {
+          var openBadge = document.createElement('span'); openBadge.className = 'open-badge'; openBadge.textContent = 'OPEN';
+          td.appendChild(document.createElement('br'));
+          td.appendChild(openBadge);
+        } else if (d.rentDelta !== null) {
+          var deltaSpan = document.createElement('span');
+          deltaSpan.className = 'new-rent-delta ' + (d.rentDelta > 0 ? 'pos' : (d.rentDelta < 0 ? 'neg' : ''));
+          deltaSpan.textContent = formatSigned(d.rentDelta);
+          td.appendChild(deltaSpan);
+        }
+        return td;
+      },
+      summary: function (agg) {
+        var td = document.createElement('td'); td.className = 'num';
+        td.textContent = formatCurrency(agg.totalNewRent);
+        return td;
+      },
+    },
+    rent: {
+      numeric: true,
+      cell: function (ctx) {
+        var td = document.createElement('td'); td.className = 'num';
+        td.textContent = formatCurrency(ctx.derived.rent);
+        return td;
+      },
+      summary: function (agg) {
+        var td = document.createElement('td'); td.className = 'num';
+        td.textContent = formatCurrency(agg.totalRent);
+        return td;
+      },
+    },
+  };
+
+  function visibleColumns() {
+    return (cfg.columnConfig.columns || []).filter(function (c) { return c.visible; });
+  }
+
+  function columnLabel(colDef) {
+    var def = DEFAULT_COLUMNS.find(function (d) { return d.id === colDef.id; });
+    return (colDef.label && colDef.label.trim()) || (def ? def.label : colDef.id);
+  }
+
+  function renderTableHeader() {
+    var $thead = document.getElementById('rw-thead');
+    if (!$thead) return;
+    $thead.innerHTML = '';
+    var tr = document.createElement('tr');
+    visibleColumns().forEach(function (colDef) {
+      var th = document.createElement('th');
+      if (COLUMN_DEFS[colDef.id] && COLUMN_DEFS[colDef.id].numeric) th.className = 'num';
+      th.textContent = columnLabel(colDef);
+      tr.appendChild(th);
+    });
+    $thead.appendChild(tr);
+  }
+
   function renderTable(rows) {
     var fld = cfg.fieldMappings;
+    var cols = visibleColumns();
+
+    renderTableHeader();
 
     var enriched = rows.map(function (row) {
       var d = parseTableauDate(row, fld.expiryDateField);
@@ -626,7 +803,7 @@
     if (enriched.length === 0) {
       var tr = document.createElement('tr');
       var td = document.createElement('td');
-      td.colSpan = 7; td.className = 'table-empty-msg';
+      td.colSpan = Math.max(cols.length, 1); td.className = 'table-empty-msg';
       td.textContent = 'No renewals due in this window.';
       tr.appendChild(td); $tbody.appendChild(tr);
       return;
@@ -635,64 +812,15 @@
     var today = startOfDay(new Date());
 
     enriched.forEach(function (item) {
-      var row = item.row, d = item.derived;
       var tr = document.createElement('tr');
-
       var inDays = item.date ? Math.round((startOfDay(item.date) - today) / 864e5) : null;
+      var ctx = { row: item.row, date: item.date, derived: item.derived, inDays: inDays };
 
-      var tdExpiry = document.createElement('td'); tdExpiry.textContent = formatDate(item.date);
-      var tdIn = document.createElement('td'); tdIn.className = 'col-in'; tdIn.textContent = inDays !== null ? '+' + inDays + 'd' : '—';
+      cols.forEach(function (colDef) {
+        var def = COLUMN_DEFS[colDef.id];
+        tr.appendChild(def ? def.cell(ctx) : document.createElement('td'));
+      });
 
-      var tdTenant = document.createElement('td');
-      var tenantCell = document.createElement('div'); tenantCell.className = 'tenant-cell';
-      var nameSpan = document.createElement('span'); nameSpan.className = 'tenant-name';
-      nameSpan.textContent = row[fld.tenantNameField] || '—';
-      tenantCell.appendChild(nameSpan);
-      if (fld.unitCodeField) {
-        var codeVal = row[fld.unitCodeField];
-        if (codeVal) {
-          var badge = document.createElement('span'); badge.className = 'unit-badge'; badge.textContent = codeVal;
-          tenantCell.appendChild(badge);
-        }
-      }
-      tdTenant.appendChild(tenantCell);
-
-      var tdArea = document.createElement('td'); tdArea.className = 'num';
-      tdArea.textContent = formatNum(parseNumeric(row['__raw__' + fld.areaField]));
-
-      var tdRate = document.createElement('td'); tdRate.className = 'num';
-      tdRate.textContent = d.hasCurrent
-        ? formatNum(d.currentRate) + ' → ' + formatNum(d.newRate)
-        : formatNum(d.newRate);
-
-      var tdUplift = document.createElement('td'); tdUplift.className = 'num';
-      if (d.upliftPct === null) {
-        tdUplift.textContent = '—';
-      } else if (d.upliftPct > 0) {
-        tdUplift.textContent = formatSignedPct(d.upliftPct); tdUplift.className += ' uplift-pos';
-      } else if (d.upliftPct < 0) {
-        tdUplift.textContent = formatSignedPct(d.upliftPct); tdUplift.className += ' uplift-neg';
-      } else {
-        tdUplift.textContent = formatSignedPct(d.upliftPct); tdUplift.className += ' uplift-neutral';
-      }
-
-      var tdRent = document.createElement('td'); tdRent.className = 'new-rent-cell';
-      var amountSpan = document.createElement('span'); amountSpan.className = 'new-rent-amount';
-      amountSpan.textContent = formatCurrency(d.newRent);
-      tdRent.appendChild(amountSpan);
-      if (d.isOpen) {
-        var openBadge = document.createElement('span'); openBadge.className = 'open-badge'; openBadge.textContent = 'OPEN';
-        tdRent.appendChild(document.createElement('br'));
-        tdRent.appendChild(openBadge);
-      } else if (d.rentDelta !== null) {
-        var deltaSpan = document.createElement('span');
-        deltaSpan.className = 'new-rent-delta ' + (d.rentDelta > 0 ? 'pos' : (d.rentDelta < 0 ? 'neg' : ''));
-        deltaSpan.textContent = formatSigned(d.rentDelta);
-        tdRent.appendChild(deltaSpan);
-      }
-
-      tr.appendChild(tdExpiry); tr.appendChild(tdIn); tr.appendChild(tdTenant);
-      tr.appendChild(tdArea); tr.appendChild(tdRate); tr.appendChild(tdUplift); tr.appendChild(tdRent);
       $tbody.appendChild(tr);
     });
   }
@@ -721,11 +849,15 @@
       ? (sumNewRentRenewed - sumCurrentRent) / sumCurrentRent * 100
       : null;
 
+    var totalRent = 0;
+    derivedRows.forEach(function (d) { if (isFiniteNum(d.rent)) totalRent += d.rent; });
+
     return {
       totalCount: totalCount, renewedCount: renewedCount,
       totalNewRent: totalNewRent, totalRentDelta: totalRentDelta,
       renewedNewRentTotal: sumNewRentRenewed,
       aggUpliftPct: aggUpliftPct,
+      totalRent: totalRent,
     };
   }
 
@@ -740,20 +872,21 @@
     $tfoot.innerHTML = '';
     if (rows.length === 0) return;
 
+    var cols = visibleColumns();
+    var summarizedCount = cols.filter(function (c) { return COLUMN_DEFS[c.id] && COLUMN_DEFS[c.id].summary; }).length;
+    var labelSpan = Math.max(cols.length - summarizedCount, 1);
+
     var tr = document.createElement('tr'); tr.className = 'rw-subtotal-row';
-    var tdLabel = document.createElement('td'); tdLabel.colSpan = 4;
+    var tdLabel = document.createElement('td'); tdLabel.colSpan = labelSpan;
     tdLabel.className = 'subtotal-label';
     tdLabel.textContent = 'Renewed subtotal (' + agg.renewedCount + ' of ' + agg.totalCount + ')';
+    tr.appendChild(tdLabel);
 
-    var tdRate = document.createElement('td'); tdRate.className = 'num';
+    cols.slice(cols.length - summarizedCount).forEach(function (colDef) {
+      var def = COLUMN_DEFS[colDef.id];
+      tr.appendChild(def.summary(agg));
+    });
 
-    var tdUplift = document.createElement('td'); tdUplift.className = 'num';
-    tdUplift.textContent = agg.aggUpliftPct === null ? '—' : formatSignedPct(agg.aggUpliftPct);
-
-    var tdRent = document.createElement('td'); tdRent.className = 'num';
-    tdRent.textContent = formatCurrency(agg.totalNewRent);
-
-    tr.appendChild(tdLabel); tr.appendChild(tdRate); tr.appendChild(tdUplift); tr.appendChild(tdRent);
     $tfoot.appendChild(tr);
   }
 

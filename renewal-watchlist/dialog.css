@@ -259,3 +259,31 @@ html, body {
 }
 
 /* ── Extension-specific overrides — add below this line ────────────────────── */
+
+.save-error {
+  flex: 1; align-self: center;
+  font-size: 12px; color: var(--danger);
+}
+
+/* ── Column manager ────────────────────────────────────────────────────────── */
+.column-item {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 8px;
+}
+.column-item input[type="checkbox"] {
+  accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;
+}
+.column-item input[type="checkbox"]:disabled { cursor: not-allowed; opacity: .6; }
+.column-item input[type="text"] {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 5px 8px; font-size: 12px; font-family: var(--font);
+  color: var(--text); background: var(--surface2); outline: none;
+}
+.column-item input[type="text"]:focus { border-color: var(--accent); }
+.column-item .column-hint { font-size: 10px; color: var(--text-muted); margin-left: 4px; }

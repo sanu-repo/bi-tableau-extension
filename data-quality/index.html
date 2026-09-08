@@ -106,9 +106,8 @@
   var MAX_ROWS = 50000;
 
   var cfg = {
-    sourceWorksheet: '',
-    overallRowValue: '',
-    fieldMappings: { rowTypeField: '', passRateField: '' },
+    overallWorksheet: '',
+    fieldMappings: { passRateField: '' },
     display: { greenThreshold: 95, amberThreshold: 80 },
     demoMode: false,
   };
@@ -143,11 +142,10 @@
   function loadSavedConfig() {
     try {
       var all = tableau.extensions.settings.getAll();
-      if (all.sourceWorksheet) cfg.sourceWorksheet = all.sourceWorksheet;
-      if (all.overallRowValue) cfg.overallRowValue  = all.overallRowValue;
-      if (all.fieldMappings)   cfg.fieldMappings    = JSON.parse(all.fieldMappings);
-      if (all.display)         cfg.display          = JSON.parse(all.display);
-      if (all.demoMode)        cfg.demoMode         = JSON.parse(all.demoMode);
+      if (all.overallWorksheet) cfg.overallWorksheet = all.overallWorksheet;
+      if (all.fieldMappings)    cfg.fieldMappings    = JSON.parse(all.fieldMappings);
+      if (all.display)          cfg.display          = JSON.parse(all.display);
+      if (all.demoMode)         cfg.demoMode         = JSON.parse(all.demoMode);
     } catch (e) {}
   }
 
@@ -155,23 +153,16 @@
 
   function fetchScore() {
     if (cfg.demoMode) { renderPill(94.3); return; }
-    if (!cfg.sourceWorksheet) { showUnconfigured(); return; }
+    if (!cfg.overallWorksheet) { showUnconfigured(); return; }
 
     var ws = tableau.extensions.dashboardContent.dashboard.worksheets
-      .find(function (w) { return w.name === cfg.sourceWorksheet; });
+      .find(function (w) { return w.name === cfg.overallWorksheet; });
     if (!ws) { showUnconfigured(); return; }
 
     ws.getSummaryDataAsync({ maxRows: MAX_ROWS }).then(function (dt) {
       var rows = parseDataTable(dt);
       var fm   = cfg.fieldMappings;
-      var overallRow;
-
-      if (fm.rowTypeField && cfg.overallRowValue) {
-        overallRow = rows.find(function (r) {
-          return String(r[fm.rowTypeField] || '').toLowerCase() === cfg.overallRowValue.toLowerCase();
-        });
-      }
-      overallRow = overallRow || rows[0] || {};
+      var overallRow = rows[0] || {};
 
       var score = parseScore(overallRow[fm.passRateField + '__n']);
       renderPill(score);
@@ -225,7 +216,7 @@
   function openPanel() {
     if (!tableauReady) return;
     var url = window.location.href.replace(/\/[^\/]*$/, '/panel.html');
-    tableau.extensions.ui.displayDialogAsync(url, '', { height: 720, width: 460, title: '' })
+    tableau.extensions.ui.displayDialogAsync(url, '', { height: 860, width: 560, title: '' })
       .catch(function (err) {
         if (err.errorCode !== tableau.ErrorCodes.DialogClosedByUser) {
           console.error('Panel error:', err);

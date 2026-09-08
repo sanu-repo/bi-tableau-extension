@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <script src="js/chart.umd.js"></script>
   <style>
     :root {
       --bg: #F7F5F0; --surface: #FFFFFF; --surface2: #F0EDE8;
@@ -34,7 +35,7 @@
 
     /* ── Header ── */
     #panel-header {
-      padding: 16px 20px 12px;
+      padding: 20px 28px 16px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       display: flex;
@@ -78,7 +79,7 @@
     }
     .ptab {
       flex: 1;
-      padding: 11px 4px;
+      padding: 13px 4px;
       text-align: center;
       font-size: 11px;
       font-weight: 500;
@@ -100,7 +101,7 @@
     #panel-body::-webkit-scrollbar { width: 5px; }
     #panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-    .tab-pane { display: none; padding: 18px 20px; }
+    .tab-pane { display: none; padding: 24px 28px; }
     .tab-pane.active { display: block; }
 
     /* ── Loading / error ── */
@@ -116,32 +117,33 @@
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 16px 18px;
-      margin-bottom: 18px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
     }
-    .score-headline { display: flex; align-items: baseline; gap: 6px; margin-bottom: 7px; }
+    .score-headline { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
     .score-number { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
     .score-unit { font-size: 15px; font-weight: 500; color: var(--text-secondary); }
-    .score-meta { font-size: 12px; color: var(--text-muted); line-height: 1.55; margin-bottom: 13px; }
+    .score-meta { font-size: 12px; color: var(--text-muted); line-height: 1.55; margin-bottom: 16px; }
     .score-stats {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
       border-top: 1px solid var(--border);
-      padding-top: 11px;
+      padding-top: 14px;
     }
-    .stat-item + .stat-item { border-left: 1px solid var(--border); padding-left: 14px; }
+    .stat-item + .stat-item { border-left: 1px solid var(--border); padding-left: 24px; }
     .stat-label {
       font-size: 9px; font-weight: 600; text-transform: uppercase;
       letter-spacing: .08em; color: var(--text-muted); margin-bottom: 3px;
     }
-    .stat-value { font-size: 19px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+    .stat-value { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
     .stat-value.danger { color: var(--danger); }
 
     .section-label {
       font-size: 9px; font-weight: 700; text-transform: uppercase;
       letter-spacing: .1em; color: var(--text-muted); margin-bottom: 12px;
     }
-    .dim-list { display: flex; flex-direction: column; gap: 13px; }
+    .dim-list { display: flex; flex-direction: column; gap: 16px; }
     .dim-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
     .dim-name { font-size: 13px; font-weight: 500; color: var(--text); }
     .dim-score { font-size: 13px; font-weight: 600; color: var(--text); }
@@ -159,24 +161,28 @@
     }
 
     /* ── Rules tab ── */
-    .rule-list { display: flex; flex-direction: column; }
-    .rule-item {
-      display: flex; align-items: flex-start; gap: 10px;
-      padding: 11px 0; border-bottom: 1px solid var(--border);
+    .rules-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .rules-table th, .rules-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    .rules-table tr:last-child td { border-bottom: none; }
+    .rules-table th {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--text-muted);
     }
-    .rule-item:last-child { border-bottom: none; }
+    .rules-table th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+    .rules-table th.sortable:hover { color: var(--text); }
+    .rules-table th.sortable.active { color: var(--text); }
+    .rules-table th .sort-arrow { font-size: 8px; margin-left: 3px; }
+    .rules-table td.num { text-align: right; white-space: nowrap; font-weight: 700; }
     .rule-id-badge {
       font-size: 10px; font-weight: 600; color: var(--text-muted);
       background: var(--surface2); border: 1px solid var(--border);
       border-radius: 4px; padding: 2px 5px; white-space: nowrap;
-      flex-shrink: 0; margin-top: 1px; font-family: monospace;
+      font-family: monospace;
     }
-    .rule-body { flex: 1; min-width: 0; }
-    .rule-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
-    .rule-desc { font-size: 11px; color: var(--text-muted); }
-    .rule-count { font-size: 14px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
-    .rule-count.has-failures { color: var(--danger); }
-    .rule-count.no-failures { color: var(--text-muted); font-weight: 400; }
+    .rule-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .rule-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .rule-fail-paren.has-failures { color: var(--danger); }
+    .rule-fail-paren.no-failures { color: var(--text-muted); font-weight: 400; }
 
     /* ── Failing records tab ── */
     .fr-header {
@@ -193,22 +199,43 @@
       cursor: pointer; transition: opacity .15s; white-space: nowrap;
     }
     .fr-download:hover { opacity: .82; }
-    .fr-table-wrap { overflow-x: auto; }
-    .fr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+    .fr-table-wrap {
+      overflow-x: auto; overflow-y: auto;
+      max-height: calc(100vh - 260px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .fr-table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+    .fr-table th, .fr-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; }
     .fr-table th {
-      text-align: left; font-size: 10px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted);
-      padding: 0 10px 7px 0; border-bottom: 1px solid var(--border); white-space: nowrap;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--text-muted);
+      position: sticky; top: 0; background: var(--surface); z-index: 1;
     }
-    .fr-table td {
-      padding: 8px 10px 8px 0; border-bottom: 1px solid var(--border);
-      color: var(--text); vertical-align: top; line-height: 1.4;
+    .fr-table tbody tr:hover { background: var(--surface2); }
+
+    /* ── History & Trends tab ── */
+    .trend-list { display: flex; flex-direction: column; gap: 26px; }
+    .trend-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
     }
-    .fr-table tr:last-child td { border-bottom: none; }
-    .fr-table .col-account { font-family: monospace; font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
-    .fr-table .col-rule { font-size: 10px; font-weight: 600; color: var(--text-muted); white-space: nowrap; font-family: monospace; }
-    .fr-table .col-reason { color: var(--danger); }
-    .fr-footer { margin-top: 11px; font-size: 11px; color: var(--text-muted); text-align: center; }
+    .trend-card-header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .trend-dim-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .trend-latest { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .trend-card-subheader { margin-bottom: 12px; }
+    .trend-binding-select {
+      font-family: var(--font); font-size: 11px; color: var(--text);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 3px 8px; cursor: pointer; outline: none;
+    }
+    .trend-binding-select:focus { border-color: var(--accent); }
+    .trend-chart-wrap { position: relative; height: 150px; }
   </style>
 </head>
 <body>
@@ -225,12 +252,14 @@
   <div id="panel-tabs">
     <button class="ptab active" data-tab="summary">Summary</button>
     <button class="ptab" data-tab="rules">Rules</button>
+    <button class="ptab" data-tab="trends">History &amp; Trends</button>
     <button class="ptab" data-tab="failing">Failing records</button>
   </div>
 
   <div id="panel-body">
     <div class="tab-pane active" id="tab-summary"><div class="status-msg">Loading…</div></div>
     <div class="tab-pane" id="tab-rules"></div>
+    <div class="tab-pane" id="tab-trends"></div>
     <div class="tab-pane" id="tab-failing"></div>
   </div>
 
@@ -240,8 +269,7 @@
 
 (function () {
 
-  var MAX_ROWS     = 50000;
-  var DISPLAY_ROWS = 100;
+  var MAX_ROWS = 50000;
 
   // ── Mock data ────────────────────────────────────────────────────────────────
 
@@ -256,52 +284,74 @@
   };
 
   var MOCK_FM = {
-    rowTypeField: '__m_type', passRateField: '__m_score',
+    passRateField: '__m_score',
     rulesCountField: '__m_rules', failuresField: '__m_fail',
-    blockingField: '__m_block', totalRecordsField: '__m_total',
+    totalRecordsField: '__m_total',
     tablesField: '__m_tables', runTimeField: '__m_runtime',
     dimensionNameField: '__m_type', dimensionScoreField: '__m_score',
     dimensionFailuresField: '__m_fail', dimensionBindingsField: '__m_bind',
-    ruleIdField: '__m_rid', ruleNameField: '__m_rname',
+    ruleNameField: '__m_rname',
     ruleDimensionField: '__m_rdim', ruleDescField: '__m_rdesc',
-    ruleFailuresField: '__m_rfail',
-    accountField: '__m_acc', ruleField: '__m_frule',
-    columnField: '__m_fcol', reasonField: '__m_freason',
+    ruleFailuresField: '__m_rfail', rulePassRateField: '__m_rpass',
+    trendDimensionField: '__m_type', trendDateField: '__m_date',
+    trendPassRateField: '__m_score', trendBindingField: '__m_tbind',
   };
 
-  var MOCK_SUMMARY = [
-    mkRow({ __m_type: 'Overall',      __m_score: 94.3, __m_rules: 18, __m_fail: 2734, __m_block: 0, __m_total: 47892, __m_tables: 6, __m_runtime: '2 hours ago' }),
+  var MOCK_OVERALL = [
+    mkRow({ __m_type: 'Overall', __m_score: 94.3, __m_rules: 18, __m_fail: 2734, __m_total: 47892, __m_tables: 6, __m_runtime: '2 hours ago' }),
+  ];
+
+  var MOCK_DIMENSIONS = [
     mkRow({ __m_type: 'Completeness', __m_score: 96.2, __m_fail: 982,  __m_bind: 4 }),
     mkRow({ __m_type: 'Validity',     __m_score: 91.4, __m_fail: 1458, __m_bind: 7 }),
     mkRow({ __m_type: 'Uniqueness',   __m_score: 99.8, __m_fail: 94,   __m_bind: 4 }),
     mkRow({ __m_type: 'Consistency',  __m_score: 97.1, __m_fail: 200,  __m_bind: 3 }),
   ];
 
+  var MOCK_TRENDS = (function () {
+    var dims = { Completeness: 94.1, Validity: 88.0, Uniqueness: 99.2, Consistency: 95.4 };
+    var bindingNames = ['Binding A', 'Binding B'];
+    var rows = [];
+    Object.keys(dims).forEach(function (dim) {
+      var base = dims[dim];
+      for (var i = 7; i >= 0; i--) {
+        var d = new Date(2026, 7, 26 - i * 7);
+        var jitter = Math.sin(i * 1.7 + dim.length) * 2.5;
+        var score = Math.max(60, Math.min(100, base + jitter + (7 - i) * 0.15));
+        var binding = bindingNames[i % bindingNames.length];
+        rows.push(mkRow({ __m_type: dim, __m_date: d.toISOString().slice(0, 10), __m_score: Math.round(score * 10) / 10, __m_tbind: binding }));
+      }
+    });
+    return rows;
+  })();
+
   var MOCK_RULES = [
-    mkRow({ __m_rid: 'RUL-0007', __m_rname: 'Email validity',                               __m_rdim: 'Validity',     __m_rdesc: 'applied to personemail across 2 bindings',    __m_rfail: 1203 }),
-    mkRow({ __m_rid: 'RUL-0001', __m_rname: 'Emirates ID validity',                         __m_rdim: 'Validity',     __m_rdesc: 'applied to nationalidnumber__pc',              __m_rfail: 892  }),
-    mkRow({ __m_rid: 'RUL-0003', __m_rname: 'Completeness — Gender',               __m_rdim: 'Completeness', __m_rdesc: 'applied to gender__pc',                        __m_rfail: 421  }),
-    mkRow({ __m_rid: 'RUL-0003', __m_rname: 'Completeness — Nationality',          __m_rdim: 'Completeness', __m_rdesc: 'applied to nationality__pc',                   __m_rfail: 218  }),
-    mkRow({ __m_rid: 'RUL-0004', __m_rname: 'Uniqueness',                                   __m_rdim: 'Uniqueness',   __m_rdesc: '4 bindings, all passing',                      __m_rfail: 0    }),
-    mkRow({ __m_rid: 'RUL-0010', __m_rname: 'Referential integrity — Nationality lookup', __m_rdim: 'Integrity', __m_rdesc: 'applied to nationality__pc',                __m_rfail: 0    }),
+    mkRow({ __m_rname: 'Email validity',                             __m_rdim: 'Validity',     __m_rdesc: 'applied to personemail across 2 bindings',    __m_rfail: 1203, __m_rpass: 72.4 }),
+    mkRow({ __m_rname: 'Emirates ID validity',                       __m_rdim: 'Validity',     __m_rdesc: 'applied to nationalidnumber__pc',              __m_rfail: 892,  __m_rpass: 81.1 }),
+    mkRow({ __m_rname: 'Completeness — Gender',                      __m_rdim: 'Completeness', __m_rdesc: 'applied to gender__pc',                        __m_rfail: 421,  __m_rpass: 92.6 }),
+    mkRow({ __m_rname: 'Completeness — Nationality',                 __m_rdim: 'Completeness', __m_rdesc: 'applied to nationality__pc',                   __m_rfail: 218,  __m_rpass: 96.8 }),
+    mkRow({ __m_rname: 'Uniqueness',                                 __m_rdim: 'Uniqueness',   __m_rdesc: '4 bindings, all passing',                      __m_rfail: 0,    __m_rpass: 100  }),
+    mkRow({ __m_rname: 'Referential integrity — Nationality lookup', __m_rdim: 'Integrity',    __m_rdesc: 'applied to nationality__pc',                   __m_rfail: 0,    __m_rpass: 100  }),
   ];
 
+  var MOCK_FAILING_COLUMNS = ['Account #', 'Rule', 'Column', 'Reason'];
+
   var MOCK_FAILING = [
-    mkRow({ __m_acc: 'SF-9482737', __m_frule: 'RUL-0007', __m_fcol: 'personemail',          __m_freason: 'Missing domain'            }),
-    mkRow({ __m_acc: 'SF-9482514', __m_frule: 'RUL-0001', __m_fcol: 'nationalidnumber__pc', __m_freason: 'Wrong length (14 digits)'  }),
-    mkRow({ __m_acc: 'SF-9482492', __m_frule: 'RUL-0003', __m_fcol: 'gender__pc',           __m_freason: 'Null value'                }),
-    mkRow({ __m_acc: 'SF-9482398', __m_frule: 'RUL-0007', __m_fcol: 'personemail',          __m_freason: 'Invalid format'            }),
-    mkRow({ __m_acc: 'SF-9482201', __m_frule: 'RUL-0001', __m_fcol: 'nationalidnumber__pc', __m_freason: 'Non-numeric characters'    }),
-    mkRow({ __m_acc: 'SF-9481893', __m_frule: 'RUL-0003', __m_fcol: 'nationality__pc',      __m_freason: 'Null value'                }),
-    mkRow({ __m_acc: 'SF-9481750', __m_frule: 'RUL-0007', __m_fcol: 'personemail',          __m_freason: 'Missing @ symbol'          }),
-    mkRow({ __m_acc: 'SF-9481623', __m_frule: 'RUL-0001', __m_fcol: 'nationalidnumber__pc', __m_freason: 'Wrong length (16 digits)'  }),
-    mkRow({ __m_acc: 'SF-9481441', __m_frule: 'RUL-0003', __m_fcol: 'gender__pc',           __m_freason: 'Null value'                }),
-    mkRow({ __m_acc: 'SF-9481302', __m_frule: 'RUL-0007', __m_fcol: 'personemail',          __m_freason: 'Invalid domain extension'  }),
-    mkRow({ __m_acc: 'SF-9481188', __m_frule: 'RUL-0003', __m_fcol: 'nationality__pc',      __m_freason: 'Null value'                }),
-    mkRow({ __m_acc: 'SF-9480994', __m_frule: 'RUL-0001', __m_fcol: 'nationalidnumber__pc', __m_freason: 'Non-numeric characters'    }),
-    mkRow({ __m_acc: 'SF-9480831', __m_frule: 'RUL-0007', __m_fcol: 'personemail',          __m_freason: 'Disposable email provider' }),
-    mkRow({ __m_acc: 'SF-9480719', __m_frule: 'RUL-0003', __m_fcol: 'gender__pc',           __m_freason: 'Null value'                }),
-    mkRow({ __m_acc: 'SF-9480502', __m_frule: 'RUL-0001', __m_fcol: 'nationalidnumber__pc', __m_freason: 'Wrong length (13 digits)'  }),
+    mkRow({ 'Account #': 'SF-9482737', 'Rule': 'Email validity',        'Column': 'personemail',          'Reason': 'Missing domain'            }),
+    mkRow({ 'Account #': 'SF-9482514', 'Rule': 'Emirates ID validity',  'Column': 'nationalidnumber__pc', 'Reason': 'Wrong length (14 digits)'  }),
+    mkRow({ 'Account #': 'SF-9482492', 'Rule': 'Completeness — Gender', 'Column': 'gender__pc',           'Reason': 'Null value'                }),
+    mkRow({ 'Account #': 'SF-9482398', 'Rule': 'Email validity',        'Column': 'personemail',          'Reason': 'Invalid format'            }),
+    mkRow({ 'Account #': 'SF-9482201', 'Rule': 'Emirates ID validity',  'Column': 'nationalidnumber__pc', 'Reason': 'Non-numeric characters'    }),
+    mkRow({ 'Account #': 'SF-9481893', 'Rule': 'Completeness — Gender', 'Column': 'nationality__pc',      'Reason': 'Null value'                }),
+    mkRow({ 'Account #': 'SF-9481750', 'Rule': 'Email validity',        'Column': 'personemail',          'Reason': 'Missing @ symbol'          }),
+    mkRow({ 'Account #': 'SF-9481623', 'Rule': 'Emirates ID validity',  'Column': 'nationalidnumber__pc', 'Reason': 'Wrong length (16 digits)'  }),
+    mkRow({ 'Account #': 'SF-9481441', 'Rule': 'Completeness — Gender', 'Column': 'gender__pc',           'Reason': 'Null value'                }),
+    mkRow({ 'Account #': 'SF-9481302', 'Rule': 'Email validity',        'Column': 'personemail',          'Reason': 'Invalid domain extension'  }),
+    mkRow({ 'Account #': 'SF-9481188', 'Rule': 'Completeness — Gender', 'Column': 'nationality__pc',      'Reason': 'Null value'                }),
+    mkRow({ 'Account #': 'SF-9480994', 'Rule': 'Emirates ID validity',  'Column': 'nationalidnumber__pc', 'Reason': 'Non-numeric characters'    }),
+    mkRow({ 'Account #': 'SF-9480831', 'Rule': 'Email validity',        'Column': 'personemail',          'Reason': 'Disposable email provider' }),
+    mkRow({ 'Account #': 'SF-9480719', 'Rule': 'Completeness — Gender', 'Column': 'gender__pc',           'Reason': 'Null value'                }),
+    mkRow({ 'Account #': 'SF-9480502', 'Rule': 'Emirates ID validity',  'Column': 'nationalidnumber__pc', 'Reason': 'Wrong length (13 digits)'  }),
   ];
 
   var MOCK_FAILING_TOTAL = 2734;
@@ -309,14 +359,17 @@
   // ── State ────────────────────────────────────────────────────────────────────
 
   var cfg = {
-    sourceWorksheet: '', rulesWorksheet: '', failingWorksheet: '',
-    panelTitle: '', overallRowValue: '',
+    overallWorksheet: '', dimensionWorksheet: '', rulesWorksheet: '', failingWorksheet: '', trendsWorksheet: '',
+    panelTitle: '',
     fieldMappings: {},
-    display: { greenThreshold: 95, amberThreshold: 80, trendText: '' },
+    display: { greenThreshold: 95, amberThreshold: 80, trendText: '', showSerialNumber: true, showFailingTable: false },
     demoMode: false,
   };
 
-  var summaryRows = [], rulesRows = [], failingRows = [];
+  var overallRows = [], dimensionRows = [], rulesRows = [], failingRows = [], trendRows = [];
+  var failingColumns = [];
+  var rulesSort = { key: 'failures', dir: 'desc' };
+  var trendCharts = [];
 
   // ── Init ─────────────────────────────────────────────────────────────────────
 
@@ -334,14 +387,15 @@
   function loadSavedConfig() {
     try {
       var all = tableau.extensions.settings.getAll();
-      if (all.sourceWorksheet)  cfg.sourceWorksheet  = all.sourceWorksheet;
-      if (all.rulesWorksheet)   cfg.rulesWorksheet   = all.rulesWorksheet;
-      if (all.failingWorksheet) cfg.failingWorksheet = all.failingWorksheet;
-      if (all.panelTitle)       cfg.panelTitle       = all.panelTitle;
-      if (all.overallRowValue)  cfg.overallRowValue  = all.overallRowValue;
-      if (all.fieldMappings)    cfg.fieldMappings    = JSON.parse(all.fieldMappings);
-      if (all.display)          cfg.display          = JSON.parse(all.display);
-      if (all.demoMode)         cfg.demoMode         = JSON.parse(all.demoMode);
+      if (all.overallWorksheet)   cfg.overallWorksheet   = all.overallWorksheet;
+      if (all.dimensionWorksheet) cfg.dimensionWorksheet = all.dimensionWorksheet;
+      if (all.rulesWorksheet)     cfg.rulesWorksheet     = all.rulesWorksheet;
+      if (all.failingWorksheet)   cfg.failingWorksheet   = all.failingWorksheet;
+      if (all.trendsWorksheet)    cfg.trendsWorksheet    = all.trendsWorksheet;
+      if (all.panelTitle)         cfg.panelTitle         = all.panelTitle;
+      if (all.fieldMappings)      cfg.fieldMappings      = JSON.parse(all.fieldMappings);
+      if (all.display)            cfg.display            = JSON.parse(all.display);
+      if (all.demoMode)           cfg.demoMode           = JSON.parse(all.demoMode);
     } catch (e) {}
     document.getElementById('panel-subtitle').textContent = cfg.panelTitle || '';
   }
@@ -349,11 +403,13 @@
   // ── Mock data ─────────────────────────────────────────────────────────────────
 
   function loadMockData() {
-    summaryRows = MOCK_SUMMARY;
-    rulesRows   = MOCK_RULES;
-    failingRows = MOCK_FAILING;
-    cfg.fieldMappings   = MOCK_FM;
-    cfg.overallRowValue = 'Overall';
+    overallRows   = MOCK_OVERALL;
+    dimensionRows = MOCK_DIMENSIONS;
+    rulesRows     = MOCK_RULES;
+    failingRows   = MOCK_FAILING;
+    failingColumns = MOCK_FAILING_COLUMNS;
+    trendRows     = MOCK_TRENDS;
+    cfg.fieldMappings = MOCK_FM;
     if (!cfg.panelTitle) {
       cfg.panelTitle = 'Property Customer Overview';
       document.getElementById('panel-subtitle').textContent = cfg.panelTitle;
@@ -364,15 +420,16 @@
   // ── Data fetch ────────────────────────────────────────────────────────────────
 
   function fetchAll() {
-    if (!cfg.sourceWorksheet) {
+    if (!cfg.overallWorksheet || !cfg.dimensionWorksheet) {
       document.getElementById('tab-summary').innerHTML = '<div class="status-msg">No worksheet configured. Close this panel and use the gear icon to configure.</div>';
       return;
     }
 
     var dashboard = tableau.extensions.dashboardContent.dashboard;
-    var summaryWs = dashboard.worksheets.find(function (w) { return w.name === cfg.sourceWorksheet; });
-    if (!summaryWs) {
-      document.getElementById('tab-summary').innerHTML = '<div class="status-msg">Worksheet "' + cfg.sourceWorksheet + '" not found on this dashboard.</div>';
+    var overallWs = dashboard.worksheets.find(function (w) { return w.name === cfg.overallWorksheet; });
+    var dimensionWs = dashboard.worksheets.find(function (w) { return w.name === cfg.dimensionWorksheet; });
+    if (!overallWs || !dimensionWs) {
+      document.getElementById('tab-summary').innerHTML = '<div class="status-msg">Configured worksheet not found on this dashboard.</div>';
       return;
     }
 
@@ -380,15 +437,22 @@
       ? dashboard.worksheets.find(function (w) { return w.name === cfg.rulesWorksheet; }) : null;
     var failingWs = cfg.failingWorksheet
       ? dashboard.worksheets.find(function (w) { return w.name === cfg.failingWorksheet; }) : null;
+    var trendsWs = cfg.trendsWorksheet
+      ? dashboard.worksheets.find(function (w) { return w.name === cfg.trendsWorksheet; }) : null;
 
     Promise.all([
-      summaryWs.getSummaryDataAsync({ maxRows: MAX_ROWS }),
+      overallWs.getSummaryDataAsync({ maxRows: MAX_ROWS }),
+      dimensionWs.getSummaryDataAsync({ maxRows: MAX_ROWS }),
       rulesWs   ? rulesWs.getSummaryDataAsync({ maxRows: MAX_ROWS })   : Promise.resolve(null),
-      failingWs ? failingWs.getSummaryDataAsync({ maxRows: MAX_ROWS }) : Promise.resolve(null),
+      (failingWs && cfg.display.showFailingTable) ? failingWs.getSummaryDataAsync({ maxRows: MAX_ROWS }) : Promise.resolve(null),
+      trendsWs  ? trendsWs.getSummaryDataAsync({ maxRows: MAX_ROWS })  : Promise.resolve(null),
     ]).then(function (results) {
-      summaryRows = results[0] ? parseDataTable(results[0]) : [];
-      rulesRows   = results[1] ? parseDataTable(results[1]) : [];
-      failingRows = results[2] ? parseDataTable(results[2]) : [];
+      overallRows   = results[0] ? parseDataTable(results[0]) : [];
+      dimensionRows = results[1] ? parseDataTable(results[1]) : [];
+      rulesRows     = results[2] ? parseDataTable(results[2]) : [];
+      failingRows   = results[3] ? parseDataTable(results[3]) : [];
+      failingColumns = results[3] ? results[3].columns.map(function (c) { return c.fieldName; }) : [];
+      trendRows     = results[4] ? parseDataTable(results[4]) : [];
       renderAll();
     }).catch(function (err) {
       console.error('Fetch error:', err);
@@ -412,23 +476,13 @@
 
   function renderAll() {
     var fm = cfg.fieldMappings;
-    var overallRow, dimRows;
-
-    if (fm.rowTypeField && cfg.overallRowValue) {
-      overallRow = summaryRows.find(function (r) {
-        return String(r[fm.rowTypeField] || '').toLowerCase() === cfg.overallRowValue.toLowerCase();
-      });
-      dimRows = summaryRows.filter(function (r) { return r !== overallRow; });
-    } else {
-      overallRow = summaryRows[0];
-      dimRows    = summaryRows.slice(1);
-    }
-    overallRow = overallRow || {};
+    var overallRow = overallRows[0] || {};
 
     var score = parseScore(overallRow[fm.passRateField + '__n']);
-    renderSummaryTab(score, overallRow, dimRows);
+    renderSummaryTab(score, overallRow, dimensionRows);
     renderRulesTab();
     renderFailingTab();
+    renderTrendsTab();
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -469,7 +523,6 @@
 
     var rulesCount = fmt(row[fm.rulesCountField    + '__n'], row[fm.rulesCountField]);
     var failures   = fmt(row[fm.failuresField      + '__n'], row[fm.failuresField]);
-    var blocking   = fmt(row[fm.blockingField      + '__n'], row[fm.blockingField] || '0');
     var totalRec   = fmt(row[fm.totalRecordsField  + '__n'], row[fm.totalRecordsField]);
     var tables     = fmt(row[fm.tablesField        + '__n'], row[fm.tablesField]);
     var runTime    = row[fm.runTimeField] || '';
@@ -512,7 +565,6 @@
         '<div class="score-stats">' +
           '<div class="stat-item"><div class="stat-label">Rules</div><div class="stat-value">' + esc(rulesCount) + '</div></div>' +
           '<div class="stat-item"><div class="stat-label">Failures</div><div class="stat-value danger">' + esc(failures) + '</div></div>' +
-          '<div class="stat-item"><div class="stat-label">Blocking</div><div class="stat-value">' + esc(blocking) + '</div></div>' +
         '</div>' +
       '</div>' +
       dimHtml + trendHtml;
@@ -534,6 +586,22 @@
 
   // ── Rules tab ─────────────────────────────────────────────────────────────────
 
+  var RULES_SORT_KEYS = {
+    name:      { type: 'text',   defaultDir: 'asc'  },
+    dimension: { type: 'text',   defaultDir: 'asc'  },
+    passRate:  { type: 'number', defaultDir: 'desc' },
+    failures:  { type: 'number', defaultDir: 'desc' },
+  };
+
+  function rulesSortValue(r, fm, key) {
+    switch (key) {
+      case 'name':      return (r[fm.ruleNameField] || '').toLowerCase();
+      case 'dimension': return (r[fm.ruleDimensionField] || '').toLowerCase();
+      case 'passRate':  return parseScore(r[fm.rulePassRateField + '__n']);
+      case 'failures':  return parseFloat(r[fm.ruleFailuresField + '__n']) || 0;
+    }
+  }
+
   function renderRulesTab() {
     var fm  = cfg.fieldMappings;
     var $el = document.getElementById('tab-rules');
@@ -541,92 +609,283 @@
       $el.innerHTML = '<div class="status-msg">No rules data configured.</div>';
       return;
     }
+    var key = rulesSort.key, dir = rulesSort.dir === 'asc' ? 1 : -1;
     var sorted = rulesRows.slice().sort(function (a, b) {
-      return (parseFloat(b[fm.ruleFailuresField + '__n']) || 0) -
-             (parseFloat(a[fm.ruleFailuresField + '__n']) || 0);
+      var av = rulesSortValue(a, fm, key), bv = rulesSortValue(b, fm, key);
+      if (av === null) av = RULES_SORT_KEYS[key].type === 'number' ? -Infinity : '';
+      if (bv === null) bv = RULES_SORT_KEYS[key].type === 'number' ? -Infinity : '';
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
     });
-    var html = sorted.map(function (r) {
-      var id      = r[fm.ruleIdField]        || '';
-      var name    = r[fm.ruleNameField]      || '';
-      var dim     = r[fm.ruleDimensionField] || '';
-      var desc    = r[fm.ruleDescField]      || '';
-      var failNat = parseFloat(r[fm.ruleFailuresField + '__n']) || 0;
-      var failFmt = fmt(r[fm.ruleFailuresField + '__n'], r[fm.ruleFailuresField] || '0');
-      var subLine = [dim, desc].filter(Boolean).join(' · ');
-      return '<div class="rule-item">' +
-        (id ? '<span class="rule-id-badge">' + esc(id) + '</span>' : '') +
-        '<div class="rule-body"><div class="rule-name">' + esc(name) + '</div>' +
-        (subLine ? '<div class="rule-desc">' + esc(subLine) + '</div>' : '') + '</div>' +
-        '<div class="rule-count ' + (failNat > 0 ? 'has-failures' : 'no-failures') + '">' + esc(failFmt) + '</div>' +
-      '</div>';
+    var showSerial = cfg.display.showSerialNumber !== false;
+    var rowsHtml = sorted.map(function (r, idx) {
+      var name     = r[fm.ruleNameField]      || '';
+      var dim      = r[fm.ruleDimensionField] || '';
+      var desc     = r[fm.ruleDescField]      || '';
+      var failNat  = parseFloat(r[fm.ruleFailuresField + '__n']) || 0;
+      var failFmt  = fmt(r[fm.ruleFailuresField + '__n'], r[fm.ruleFailuresField] || '0');
+      var passRate = parseScore(r[fm.rulePassRateField + '__n']);
+      var passColor = scoreColor(passRate);
+      var passFmt  = passRate !== null ? passRate.toFixed(1) + '%' : '—';
+      return '<tr>' +
+        (showSerial ? '<td><span class="rule-id-badge">#' + (idx + 1) + '</span></td>' : '') +
+        '<td><div class="rule-name">' + esc(name) + '</div>' +
+          (desc ? '<div class="rule-desc">' + esc(desc) + '</div>' : '') + '</td>' +
+        '<td>' + esc(dim) + '</td>' +
+        '<td class="num" style="color:' + passColor + '">' + esc(passFmt) + '</td>' +
+        '<td class="num rule-fail-paren ' + (failNat > 0 ? 'has-failures' : 'no-failures') + '">' + esc(failFmt) + '</td>' +
+      '</tr>';
     }).join('');
-    $el.innerHTML = '<div class="rule-list">' + html + '</div>';
+
+    var headers = [
+      { key: 'name',      label: 'Rule' },
+      { key: 'dimension', label: 'Dimension' },
+      { key: 'passRate',  label: 'Pass rate' },
+      { key: 'failures',  label: 'Failures' },
+    ];
+    var theadHtml = headers.map(function (h) {
+      var active = rulesSort.key === h.key;
+      var arrow  = active ? (rulesSort.dir === 'asc' ? '&#9650;' : '&#9660;') : '';
+      return '<th class="sortable' + (active ? ' active' : '') + '" data-sort-key="' + h.key + '">' +
+        esc(h.label) + (arrow ? '<span class="sort-arrow">' + arrow + '</span>' : '') +
+      '</th>';
+    }).join('');
+
+    $el.innerHTML =
+      '<table class="rules-table"><thead><tr>' +
+        (showSerial ? '<th></th>' : '') +
+        theadHtml +
+      '</tr></thead><tbody>' + rowsHtml + '</tbody></table>';
+
+    $el.querySelectorAll('th.sortable').forEach(function (th) {
+      th.addEventListener('click', function () {
+        var k = th.dataset.sortKey;
+        if (rulesSort.key === k) {
+          rulesSort.dir = rulesSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          rulesSort.key = k;
+          rulesSort.dir = RULES_SORT_KEYS[k].defaultDir;
+        }
+        renderRulesTab();
+      });
+    });
   }
 
   // ── Failing records tab ───────────────────────────────────────────────────────
 
   function renderFailingTab() {
-    var fm    = cfg.fieldMappings;
-    var $el   = document.getElementById('tab-failing');
-    var total   = cfg.demoMode ? MOCK_FAILING_TOTAL : failingRows.length;
-    var display = failingRows.slice(0, DISPLAY_ROWS);
+    var fm  = cfg.fieldMappings;
+    var $el = document.getElementById('tab-failing');
+    var overallRow = overallRows[0] || {};
 
-    var hasAccount = !!fm.accountField;
-    var hasRule    = !!fm.ruleField;
-    var hasCol     = !!fm.columnField;
-    var hasReason  = !!fm.reasonField;
+    var total;
+    if (cfg.demoMode) {
+      total = MOCK_FAILING_TOTAL;
+    } else if (fm.failuresField && overallRow[fm.failuresField + '__n'] != null) {
+      total = parseFloat(overallRow[fm.failuresField + '__n']) || 0;
+    } else {
+      total = failingRows.length;
+    }
 
+    var canDownload = total > 0 && (cfg.demoMode || !!cfg.failingWorksheet);
     var headerHtml =
       '<div class="fr-header">' +
         '<div class="fr-count"><strong>' + total.toLocaleString() + '</strong> failing records · latest run</div>' +
-        (total > 0 ? '<button class="fr-download" id="btn-csv">&#8595; Download CSV</button>' : '') +
+        (canDownload ? '<button class="fr-download" id="btn-csv">&#8595; Download CSV</button>' : '') +
       '</div>';
 
-    if (!total) {
+    if (!cfg.display.showFailingTable) {
+      $el.innerHTML = headerHtml;
+      var csvBtnOnly = document.getElementById('btn-csv');
+      if (csvBtnOnly) csvBtnOnly.addEventListener('click', downloadCSV);
+      return;
+    }
+
+    if (!total || !failingColumns.length) {
       $el.innerHTML = headerHtml + '<div class="status-msg">No failing records found.</div>';
       return;
     }
 
-    var thead = '<tr>' +
-      (hasAccount ? '<th>Account #</th>' : '') +
-      (hasRule    ? '<th>Rule</th>'      : '') +
-      (hasCol     ? '<th>Column</th>'    : '') +
-      (hasReason  ? '<th>Reason</th>'    : '') +
-      '</tr>';
-
-    var tbody = display.map(function (r) {
-      return '<tr>' +
-        (hasAccount ? '<td class="col-account">' + esc(r[fm.accountField] || '') + '</td>' : '') +
-        (hasRule    ? '<td class="col-rule">'    + esc(r[fm.ruleField]    || '') + '</td>' : '') +
-        (hasCol     ? '<td>'                     + esc(r[fm.columnField]  || '') + '</td>' : '') +
-        (hasReason  ? '<td class="col-reason">'  + esc(r[fm.reasonField]  || '') + '</td>' : '') +
-      '</tr>';
+    var theadHtml = '<tr>' + failingColumns.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>';
+    var tbodyHtml = failingRows.map(function (r) {
+      return '<tr>' + failingColumns.map(function (c) { return '<td>' + esc(r[c] || '') + '</td>'; }).join('') + '</tr>';
     }).join('');
 
-    var footer = total > display.length
-      ? '<div class="fr-footer">Showing ' + display.length + ' of ' + total.toLocaleString() + ' · download CSV for the full list</div>'
-      : '<div class="fr-footer">Showing all ' + total.toLocaleString() + ' records</div>';
-
     $el.innerHTML = headerHtml +
-      '<div class="fr-table-wrap"><table class="fr-table"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table></div>' +
-      footer;
+      '<div class="fr-table-wrap"><table class="fr-table">' +
+        '<thead>' + theadHtml + '</thead>' +
+        '<tbody>' + tbodyHtml + '</tbody>' +
+      '</table></div>';
 
     var csvBtn = document.getElementById('btn-csv');
     if (csvBtn) csvBtn.addEventListener('click', downloadCSV);
   }
 
+  // ── History & Trends tab ──────────────────────────────────────────────────────
+
+  function formatDateLabel(dstr) {
+    var d = new Date(dstr);
+    if (isNaN(d.getTime())) return dstr;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function sortByDate(rows, dateField) {
+    return rows.slice().sort(function (a, b) {
+      return new Date(a[dateField]) - new Date(b[dateField]);
+    });
+  }
+
+  function buildTrendChart(canvasId, rows, dateField, scoreField) {
+    var labels = rows.map(function (r) { return r[dateField]; });
+    var scores = rows.map(function (r) { return parseScore(r[scoreField + '__n']); });
+
+    var ctx = document.getElementById(canvasId).getContext('2d');
+    return new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: scores,
+          borderColor: '#D4782F',
+          backgroundColor: 'rgba(212,120,47,0.08)',
+          borderWidth: 2,
+          pointRadius: 1,
+          pointHoverRadius: 5,
+          pointHitRadius: 8,
+          pointBackgroundColor: '#D4782F',
+          tension: 0.35,
+          fill: true,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function (items) { return formatDateLabel(items[0].label); },
+              label: function (item) { return item.parsed.y === null ? '' : 'Pass rate: ' + item.parsed.y.toFixed(1) + '%'; },
+            },
+          },
+        },
+        scales: {
+          y: {
+            min: 0, max: 100,
+            ticks: { callback: function (v) { return v + '%'; }, font: { size: 10 } },
+            grid: { color: '#E8E4DD' },
+          },
+          x: { display: false },
+        },
+      },
+    });
+  }
+
+  function renderTrendsTab() {
+    var fm  = cfg.fieldMappings;
+    var $el = document.getElementById('tab-trends');
+
+    trendCharts.forEach(function (c) { c.destroy(); });
+    trendCharts = [];
+
+    if (!fm.trendDimensionField || !fm.trendDateField || !fm.trendPassRateField || !trendRows.length) {
+      $el.innerHTML = '<div class="status-msg">No trend data configured.</div>';
+      return;
+    }
+
+    var groups = {};
+    var order  = [];
+    trendRows.forEach(function (r) {
+      var dim = r[fm.trendDimensionField] || '';
+      if (!groups[dim]) { groups[dim] = []; order.push(dim); }
+      groups[dim].push(r);
+    });
+
+    var bindingsByDim = {};
+    order.forEach(function (dim) {
+      var bindings = [];
+      if (fm.trendBindingField) {
+        groups[dim].forEach(function (r) {
+          var b = r[fm.trendBindingField];
+          if (b && bindings.indexOf(b) < 0) bindings.push(b);
+        });
+      }
+      bindingsByDim[dim] = bindings;
+    });
+
+    $el.innerHTML = '<div class="trend-list">' + order.map(function (dim, i) {
+      var bindings = bindingsByDim[dim];
+      var subheader = bindings.length
+        ? '<div class="trend-card-subheader"><select class="trend-binding-select" id="trend-binding-' + i + '">' +
+            bindings.map(function (b) { return '<option value="' + esc(b) + '">' + esc(b) + '</option>'; }).join('') +
+          '</select></div>'
+        : '';
+      return '<div class="trend-card">' +
+        '<div class="trend-card-header">' +
+          '<span class="trend-dim-name">' + esc(dim) + '</span>' +
+          '<span class="trend-latest" id="trend-latest-' + i + '"></span>' +
+        '</div>' +
+        subheader +
+        '<div class="trend-chart-wrap"><canvas id="trend-canvas-' + i + '"></canvas></div>' +
+      '</div>';
+    }).join('') + '</div>';
+
+    function renderChartFor(dim, i, binding) {
+      var groupRows = groups[dim];
+      var rows = binding
+        ? groupRows.filter(function (r) { return r[fm.trendBindingField] === binding; })
+        : groupRows;
+      rows = sortByDate(rows, fm.trendDateField);
+
+      var scores = rows.map(function (r) { return parseScore(r[fm.trendPassRateField + '__n']); });
+      var latest = scores.length ? scores[scores.length - 1] : null;
+      var $latest = document.getElementById('trend-latest-' + i);
+      $latest.textContent = latest !== null ? latest.toFixed(1) + '% pass rate' : '—';
+      $latest.style.color = scoreColor(latest);
+
+      return buildTrendChart('trend-canvas-' + i, rows, fm.trendDateField, fm.trendPassRateField);
+    }
+
+    order.forEach(function (dim, i) {
+      var bindings = bindingsByDim[dim];
+      var defaultBinding = bindings.length ? bindings[0] : null;
+      trendCharts[i] = renderChartFor(dim, i, defaultBinding);
+
+      if (bindings.length) {
+        document.getElementById('trend-binding-' + i).addEventListener('change', function () {
+          trendCharts[i].destroy();
+          trendCharts[i] = renderChartFor(dim, i, this.value);
+        });
+      }
+    });
+  }
+
   // ── CSV download ──────────────────────────────────────────────────────────────
 
   function downloadCSV() {
-    var fm   = cfg.fieldMappings;
-    var cols = [];
-    if (fm.accountField) cols.push({ header: 'Account #', key: fm.accountField });
-    if (fm.ruleField)    cols.push({ header: 'Rule',       key: fm.ruleField    });
-    if (fm.columnField)  cols.push({ header: 'Column',     key: fm.columnField  });
-    if (fm.reasonField)  cols.push({ header: 'Reason',     key: fm.reasonField  });
-    var lines = [cols.map(function (c) { return csvCell(c.header); }).join(',')];
-    failingRows.forEach(function (r) {
-      lines.push(cols.map(function (c) { return csvCell(r[c.key] || ''); }).join(','));
+    if (failingRows.length && failingColumns.length) {
+      triggerCSVDownload(failingColumns, failingRows);
+      return;
+    }
+    if (cfg.demoMode) {
+      triggerCSVDownload(MOCK_FAILING_COLUMNS, MOCK_FAILING);
+      return;
+    }
+    if (!cfg.failingWorksheet) return;
+    var ws = tableau.extensions.dashboardContent.dashboard.worksheets
+      .find(function (w) { return w.name === cfg.failingWorksheet; });
+    if (!ws) return;
+    ws.getSummaryDataAsync({ maxRows: MAX_ROWS }).then(function (dt) {
+      var cols = dt.columns.map(function (c) { return c.fieldName; });
+      triggerCSVDownload(cols, parseDataTable(dt));
+    });
+  }
+
+  function triggerCSVDownload(columns, rows) {
+    var lines = [columns.map(csvCell).join(',')];
+    rows.forEach(function (r) {
+      lines.push(columns.map(function (c) { return csvCell(r[c] || ''); }).join(','));
     });
     var blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
     var url  = URL.createObjectURL(blob);

@@ -4,16 +4,18 @@
 
   var dashWs = [];
 
-  var SUMMARY_FIELD_IDS = [
-    'fld-row-type', 'fld-pass-rate', 'fld-rules-count', 'fld-failures',
-    'fld-blocking', 'fld-total-records', 'fld-tables', 'fld-run-time',
+  var OVERALL_FIELD_IDS = [
+    'fld-pass-rate', 'fld-rules-count', 'fld-failures',
+    'fld-total-records', 'fld-tables', 'fld-run-time',
+  ];
+  var DIMENSION_FIELD_IDS = [
     'fld-dim-name', 'fld-dim-score', 'fld-dim-failures', 'fld-dim-bindings',
   ];
   var RULES_FIELD_IDS = [
-    'fld-rule-id', 'fld-rule-name', 'fld-rule-dim', 'fld-rule-desc', 'fld-rule-failures',
+    'fld-rule-name', 'fld-rule-dim', 'fld-rule-desc', 'fld-rule-failures', 'fld-rule-pass-rate',
   ];
-  var FAILING_FIELD_IDS = [
-    'fld-account', 'fld-fail-rule', 'fld-fail-column', 'fld-fail-reason',
+  var TRENDS_FIELD_IDS = [
+    'fld-trend-dim', 'fld-trend-date', 'fld-trend-score', 'fld-trend-binding',
   ];
 
   window.addEventListener('load', function () {
@@ -50,7 +52,7 @@
   }
 
   function populateWorksheetDropdowns() {
-    ['ws-summary', 'ws-rules', 'ws-failing'].forEach(function (id) {
+    ['ws-summary-overall', 'ws-summary-dimension', 'ws-rules', 'ws-failing', 'ws-trends'].forEach(function (id) {
       var $sel = document.getElementById(id);
       dashWs.forEach(function (w) {
         var o = document.createElement('option');
@@ -59,14 +61,17 @@
       });
     });
 
-    document.getElementById('ws-summary').addEventListener('change', function () {
-      loadColsForWorksheet(this.value, SUMMARY_FIELD_IDS, {});
+    document.getElementById('ws-summary-overall').addEventListener('change', function () {
+      loadColsForWorksheet(this.value, OVERALL_FIELD_IDS, {});
+    });
+    document.getElementById('ws-summary-dimension').addEventListener('change', function () {
+      loadColsForWorksheet(this.value, DIMENSION_FIELD_IDS, {});
     });
     document.getElementById('ws-rules').addEventListener('change', function () {
       loadColsForWorksheet(this.value, RULES_FIELD_IDS, {});
     });
-    document.getElementById('ws-failing').addEventListener('change', function () {
-      loadColsForWorksheet(this.value, FAILING_FIELD_IDS, {});
+    document.getElementById('ws-trends').addEventListener('change', function () {
+      loadColsForWorksheet(this.value, TRENDS_FIELD_IDS, {});
     });
   }
 
@@ -99,47 +104,54 @@
     var d  = s.display       || {};
 
     if (s.panelTitle)      setVal('inp-panel-title',      s.panelTitle);
-    if (s.overallRowValue) setVal('inp-overall-value',    s.overallRowValue);
     if (d.greenThreshold != null) setVal('inp-green-threshold', d.greenThreshold);
     if (d.amberThreshold != null) setVal('inp-amber-threshold', d.amberThreshold);
     if (d.trendText)       setVal('inp-trend-text',       d.trendText);
     if (s.demoMode != null) setCheck('chk-demo-mode', s.demoMode);
+    setCheck('chk-show-serial', d.showSerialNumber !== false);
+    setCheck('chk-show-failing-table', d.showFailingTable === true);
 
-    if (s.sourceWorksheet) {
-      setVal('ws-summary', s.sourceWorksheet);
-      loadColsForWorksheet(s.sourceWorksheet, SUMMARY_FIELD_IDS, {
-        'fld-row-type':      fm.rowTypeField,
+    if (s.overallWorksheet) {
+      setVal('ws-summary-overall', s.overallWorksheet);
+      loadColsForWorksheet(s.overallWorksheet, OVERALL_FIELD_IDS, {
         'fld-pass-rate':     fm.passRateField,
         'fld-rules-count':   fm.rulesCountField,
         'fld-failures':      fm.failuresField,
-        'fld-blocking':      fm.blockingField,
         'fld-total-records': fm.totalRecordsField,
         'fld-tables':        fm.tablesField,
         'fld-run-time':      fm.runTimeField,
+      });
+    }
+    if (s.dimensionWorksheet) {
+      setVal('ws-summary-dimension', s.dimensionWorksheet);
+      loadColsForWorksheet(s.dimensionWorksheet, DIMENSION_FIELD_IDS, {
         'fld-dim-name':      fm.dimensionNameField,
         'fld-dim-score':     fm.dimensionScoreField,
         'fld-dim-failures':  fm.dimensionFailuresField,
         'fld-dim-bindings':  fm.dimensionBindingsField,
       });
     }
+    if (s.trendsWorksheet) {
+      setVal('ws-trends', s.trendsWorksheet);
+      loadColsForWorksheet(s.trendsWorksheet, TRENDS_FIELD_IDS, {
+        'fld-trend-dim':     fm.trendDimensionField,
+        'fld-trend-date':    fm.trendDateField,
+        'fld-trend-score':   fm.trendPassRateField,
+        'fld-trend-binding': fm.trendBindingField,
+      });
+    }
     if (s.rulesWorksheet) {
       setVal('ws-rules', s.rulesWorksheet);
       loadColsForWorksheet(s.rulesWorksheet, RULES_FIELD_IDS, {
-        'fld-rule-id':       fm.ruleIdField,
-        'fld-rule-name':     fm.ruleNameField,
-        'fld-rule-dim':      fm.ruleDimensionField,
-        'fld-rule-desc':     fm.ruleDescField,
-        'fld-rule-failures': fm.ruleFailuresField,
+        'fld-rule-name':      fm.ruleNameField,
+        'fld-rule-dim':       fm.ruleDimensionField,
+        'fld-rule-desc':      fm.ruleDescField,
+        'fld-rule-failures':  fm.ruleFailuresField,
+        'fld-rule-pass-rate': fm.rulePassRateField,
       });
     }
     if (s.failingWorksheet) {
       setVal('ws-failing', s.failingWorksheet);
-      loadColsForWorksheet(s.failingWorksheet, FAILING_FIELD_IDS, {
-        'fld-account':     fm.accountField,
-        'fld-fail-rule':   fm.ruleField,
-        'fld-fail-column': fm.columnField,
-        'fld-fail-reason': fm.reasonField,
-      });
     }
   }
 
@@ -148,18 +160,17 @@
     $btn.textContent = 'Saving…';
     $btn.disabled = true;
 
-    tableau.extensions.settings.set('sourceWorksheet',  getVal('ws-summary'));
-    tableau.extensions.settings.set('rulesWorksheet',   getVal('ws-rules'));
-    tableau.extensions.settings.set('failingWorksheet', getVal('ws-failing'));
-    tableau.extensions.settings.set('panelTitle',       getVal('inp-panel-title'));
-    tableau.extensions.settings.set('overallRowValue',  getVal('inp-overall-value'));
+    tableau.extensions.settings.set('overallWorksheet',   getVal('ws-summary-overall'));
+    tableau.extensions.settings.set('dimensionWorksheet', getVal('ws-summary-dimension'));
+    tableau.extensions.settings.set('rulesWorksheet',     getVal('ws-rules'));
+    tableau.extensions.settings.set('failingWorksheet',   getVal('ws-failing'));
+    tableau.extensions.settings.set('trendsWorksheet',    getVal('ws-trends'));
+    tableau.extensions.settings.set('panelTitle',         getVal('inp-panel-title'));
 
     tableau.extensions.settings.set('fieldMappings', JSON.stringify({
-      rowTypeField:           getVal('fld-row-type'),
       passRateField:          getVal('fld-pass-rate'),
       rulesCountField:        getVal('fld-rules-count'),
       failuresField:          getVal('fld-failures'),
-      blockingField:          getVal('fld-blocking'),
       totalRecordsField:      getVal('fld-total-records'),
       tablesField:            getVal('fld-tables'),
       runTimeField:           getVal('fld-run-time'),
@@ -167,21 +178,23 @@
       dimensionScoreField:    getVal('fld-dim-score'),
       dimensionFailuresField: getVal('fld-dim-failures'),
       dimensionBindingsField: getVal('fld-dim-bindings'),
-      ruleIdField:            getVal('fld-rule-id'),
       ruleNameField:          getVal('fld-rule-name'),
       ruleDimensionField:     getVal('fld-rule-dim'),
       ruleDescField:          getVal('fld-rule-desc'),
       ruleFailuresField:      getVal('fld-rule-failures'),
-      accountField:           getVal('fld-account'),
-      ruleField:              getVal('fld-fail-rule'),
-      columnField:            getVal('fld-fail-column'),
-      reasonField:            getVal('fld-fail-reason'),
+      rulePassRateField:      getVal('fld-rule-pass-rate'),
+      trendDimensionField:    getVal('fld-trend-dim'),
+      trendDateField:         getVal('fld-trend-date'),
+      trendPassRateField:     getVal('fld-trend-score'),
+      trendBindingField:      getVal('fld-trend-binding'),
     }));
 
     tableau.extensions.settings.set('display', JSON.stringify({
       greenThreshold: parseFloat(getVal('inp-green-threshold')) || 95,
       amberThreshold: parseFloat(getVal('inp-amber-threshold')) || 80,
       trendText:      getVal('inp-trend-text'),
+      showSerialNumber: getCheck('chk-show-serial'),
+      showFailingTable: getCheck('chk-show-failing-table'),
     }));
     tableau.extensions.settings.set('demoMode', JSON.stringify(getCheck('chk-demo-mode')));
 

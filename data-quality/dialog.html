@@ -30,28 +30,14 @@
     <!-- ── DATA TAB ── -->
     <div class="tab-pane active" id="tab-data">
 
-      <!-- Summary worksheet -->
-      <div class="section-title">Summary Worksheet</div>
+      <!-- Overall KPIs worksheet -->
+      <div class="section-title">Overall KPIs Worksheet</div>
 
       <div class="field-group">
         <label>Source Worksheet <span style="color:var(--danger)">*</span></label>
-        <select id="ws-summary"><option value="">— select worksheet —</option></select>
-        <div class="field-hint">Sheet containing the overall pass rate and per-dimension rows</div>
+        <select id="ws-summary-overall"><option value="">— select worksheet —</option></select>
+        <div class="field-hint">Sheet containing the single overall pass-rate row</div>
       </div>
-
-      <div class="field-group">
-        <label>Row type field <span style="color:var(--danger)">*</span></label>
-        <select id="fld-row-type"><option value="">— select field —</option></select>
-        <div class="field-hint">Field that distinguishes the overall summary row from dimension rows (e.g. "Category")</div>
-      </div>
-
-      <div class="field-group">
-        <label>Overall row identifier <span style="color:var(--danger)">*</span></label>
-        <input type="text" id="inp-overall-value" placeholder='e.g. "Overall" or "Summary"' maxlength="100" />
-        <div class="field-hint">Value in the row type field that marks the summary/overall row</div>
-      </div>
-
-      <div class="section-title" style="margin-top:14px;">Overall Row Fields</div>
 
       <div class="field-row">
         <div class="field-group">
@@ -64,15 +50,9 @@
         </div>
       </div>
 
-      <div class="field-row">
-        <div class="field-group">
-          <label>Total failures</label>
-          <select id="fld-failures"><option value="">— none —</option></select>
-        </div>
-        <div class="field-group">
-          <label>Blocking failures</label>
-          <select id="fld-blocking"><option value="">— none —</option></select>
-        </div>
+      <div class="field-group">
+        <label>Total failures</label>
+        <select id="fld-failures"><option value="">— none —</option></select>
       </div>
 
       <div class="field-row">
@@ -92,7 +72,14 @@
         <div class="field-hint">Text field like "2 hours ago" shown in the summary sentence</div>
       </div>
 
-      <div class="section-title" style="margin-top:14px;">Dimension Row Fields</div>
+      <!-- By dimension worksheet -->
+      <div class="section-title">By Dimension Worksheet</div>
+
+      <div class="field-group">
+        <label>Source Worksheet <span style="color:var(--danger)">*</span></label>
+        <select id="ws-summary-dimension"><option value="">— select worksheet —</option></select>
+        <div class="field-hint">Sheet containing one row per dimension</div>
+      </div>
 
       <div class="field-row">
         <div class="field-group">
@@ -124,15 +111,9 @@
         <select id="ws-rules"><option value="">— none (skip Rules tab) —</option></select>
       </div>
 
-      <div class="field-row">
-        <div class="field-group">
-          <label>Rule ID</label>
-          <select id="fld-rule-id"><option value="">— none —</option></select>
-        </div>
-        <div class="field-group">
-          <label>Rule name</label>
-          <select id="fld-rule-name"><option value="">— none —</option></select>
-        </div>
+      <div class="field-group">
+        <label>Binding Name</label>
+        <select id="fld-rule-name"><option value="">— none —</option></select>
       </div>
 
       <div class="field-row">
@@ -141,15 +122,21 @@
           <select id="fld-rule-dim"><option value="">— none —</option></select>
         </div>
         <div class="field-group">
-          <label>Failures count</label>
-          <select id="fld-rule-failures"><option value="">— none —</option></select>
+          <label>Applied-to description</label>
+          <select id="fld-rule-desc"><option value="">— none —</option></select>
         </div>
       </div>
 
-      <div class="field-group">
-        <label>Applied-to description</label>
-        <select id="fld-rule-desc"><option value="">— none —</option></select>
-        <div class="field-hint">Text like "applied to personemail across 2 bindings"</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Pass rate</label>
+          <select id="fld-rule-pass-rate"><option value="">— none —</option></select>
+          <div class="field-hint">Formatted % field shown as the primary value on the right of each rule</div>
+        </div>
+        <div class="field-group">
+          <label>Failures count</label>
+          <select id="fld-rule-failures"><option value="">— none —</option></select>
+        </div>
       </div>
 
       <!-- Failing records worksheet -->
@@ -158,27 +145,38 @@
       <div class="field-group">
         <label>Failing Records Worksheet</label>
         <select id="ws-failing"><option value="">— none (skip Failing records tab) —</option></select>
+        <div class="field-hint">All columns from this worksheet are shown automatically in the Failing Records tab.</div>
+      </div>
+
+      <!-- History & Trends worksheet -->
+      <div class="section-title">History &amp; Trends Worksheet</div>
+
+      <div class="field-group">
+        <label>Trends Worksheet</label>
+        <select id="ws-trends"><option value="">— none (skip History &amp; Trends tab) —</option></select>
+        <div class="field-hint">Sheet with one row per dimension per historical run</div>
       </div>
 
       <div class="field-row">
         <div class="field-group">
-          <label>Account #</label>
-          <select id="fld-account"><option value="">— none —</option></select>
+          <label>Dimension</label>
+          <select id="fld-trend-dim"><option value="">— none —</option></select>
         </div>
         <div class="field-group">
-          <label>Rule</label>
-          <select id="fld-fail-rule"><option value="">— none —</option></select>
+          <label>Run date</label>
+          <select id="fld-trend-date"><option value="">— none —</option></select>
         </div>
       </div>
 
       <div class="field-row">
         <div class="field-group">
-          <label>Column</label>
-          <select id="fld-fail-column"><option value="">— none —</option></select>
+          <label>Pass rate</label>
+          <select id="fld-trend-score"><option value="">— none —</option></select>
         </div>
         <div class="field-group">
-          <label>Reason</label>
-          <select id="fld-fail-reason"><option value="">— none —</option></select>
+          <label>Binding Name (optional)</label>
+          <select id="fld-trend-binding"><option value="">— none (no drill-down) —</option></select>
+          <div class="field-hint">If mapped, each dimension's chart gets a dropdown to filter by this field's distinct values</div>
         </div>
       </div>
 
@@ -195,6 +193,30 @@
         </div>
         <label class="toggle">
           <input type="checkbox" id="chk-demo-mode" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="section-title" style="margin-top:18px;">Rules Tab</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Show serial number</div>
+          <div class="toggle-desc">Displays a running #1, #2, #3… badge next to each rule, based on current sort order.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chk-show-serial" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="section-title" style="margin-top:18px;">Failing Records Tab</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Show detail table</div>
+          <div class="toggle-desc">Displays the full list of failing records below the count line. Off by default — pulling every failing row can be slow for large datasets.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chk-show-failing-table" />
           <span class="toggle-slider"></span>
         </label>
       </div>

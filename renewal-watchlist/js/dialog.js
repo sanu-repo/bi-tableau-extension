@@ -8,6 +8,8 @@
   var columnList  = [];
   var pendingFieldMappings = null;
 
+  var DEFAULT_BG_COLOR = '#FFFFFF';
+
   var DEFAULT_COLUMNS = [
     { id: 'expiry',  label: 'Expiry' },
     { id: 'inDays',  label: 'In' },
@@ -26,6 +28,7 @@
       populateWorksheetDropdowns();
       initTabs();
       initFilterManager();
+      initBgColorPicker();
 
       var saved = loadSettings();
       applySavedSettings(saved);
@@ -77,6 +80,15 @@
     });
   }
 
+  function initBgColorPicker() {
+    var colorEl = document.getElementById('bg-color');
+    var textEl  = document.getElementById('bg-color-text');
+    colorEl.addEventListener('input', function () { textEl.value = colorEl.value.toUpperCase(); });
+    textEl.addEventListener('change', function () {
+      if (/^#[0-9a-fA-F]{6}$/.test(textEl.value)) colorEl.value = textEl.value;
+    });
+  }
+
   function applyFieldMappings(fm) {
     setVal('fld-expiry-date',   fm.expiryDateField);
     setVal('fld-tenant-name',   fm.tenantNameField);
@@ -112,6 +124,10 @@
     } else {
       applyFieldMappings(fm);
     }
+
+    var bgColor = (typeof s.bgColor === 'string' && s.bgColor) ? s.bgColor : DEFAULT_BG_COLOR;
+    setVal('bg-color', bgColor);
+    setVal('bg-color-text', bgColor);
 
     var fc = s.filterConfig || {};
     filterList = (fc.filters || []).slice();
@@ -259,6 +275,7 @@
     $btn.textContent = 'Saving…'; $btn.disabled = true;
 
     tableau.extensions.settings.set('sourceWorksheet', getVal('ws-source'));
+    tableau.extensions.settings.set('bgColor', getVal('bg-color-text').trim() || DEFAULT_BG_COLOR);
 
     tableau.extensions.settings.set('fieldMappings', JSON.stringify({
       expiryDateField:  getVal('fld-expiry-date'),

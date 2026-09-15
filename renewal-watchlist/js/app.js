@@ -45,8 +45,11 @@
     { id: 'rent',    label: 'Rent' },
   ];
 
+  var DEFAULT_BG_COLOR = '#FFFFFF';
+
   var cfg = {
     sourceWorksheet: '',
+    bgColor: DEFAULT_BG_COLOR,
     fieldMappings: {
       expiryDateField: '', tenantNameField: '', unitCodeField: '',
       areaField: '', currentRateField: '', newRateField: '',
@@ -87,10 +90,12 @@
     try {
       var all = tableau.extensions.settings.getAll();
       if (all.sourceWorksheet) cfg.sourceWorksheet = all.sourceWorksheet;
+      cfg.bgColor = all.bgColor || DEFAULT_BG_COLOR;
       if (all.fieldMappings)   cfg.fieldMappings   = JSON.parse(all.fieldMappings);
       if (all.filterConfig)    cfg.filterConfig    = JSON.parse(all.filterConfig);
       if (all.columnConfig)    mergeColumnConfig(JSON.parse(all.columnConfig));
     } catch (e) { console.warn('Failed to parse saved settings:', e); }
+    document.documentElement.style.setProperty('--bg', cfg.bgColor);
   }
 
   function mergeColumnConfig(saved) {
@@ -633,6 +638,10 @@
 
   // ── Table rendering ──────────────────────────────────────────────────────
 
+  function splitUnitCodes(val) {
+    return String(val).split(/[,/;|]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+
   var COLUMN_DEFS = {
     expiry: {
       numeric: false,
@@ -662,8 +671,10 @@
         if (fld.unitCodeField) {
           var codeVal = ctx.row[fld.unitCodeField];
           if (codeVal) {
-            var badge = document.createElement('span'); badge.className = 'unit-badge'; badge.textContent = codeVal;
-            tenantCell.appendChild(badge);
+            splitUnitCodes(codeVal).forEach(function (code) {
+              var badge = document.createElement('span'); badge.className = 'unit-badge'; badge.textContent = code;
+              tenantCell.appendChild(badge);
+            });
           }
         }
         td.appendChild(tenantCell);

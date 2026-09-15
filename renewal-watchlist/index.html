@@ -183,16 +183,29 @@
 
     /* ── Main table ── */
     #main { flex: 1; padding: 0 16px 16px; min-height: 0; overflow: auto; }
-    .rw-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .rw-table { width: 100%; border-collapse: collapse; font-size: 12.5px; table-layout: fixed; }
     .rw-table thead th {
       text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase;
       letter-spacing: .06em; color: var(--text-muted); padding: 8px 10px;
       border-bottom: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0;
-      background: var(--bg);
+      background: var(--bg); overflow: hidden; text-overflow: ellipsis;
     }
     .rw-table th.num, .rw-table td.num { text-align: right; }
-    .rw-table tbody td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .rw-table tbody td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; word-wrap: break-word; }
     .rw-table tbody tr:hover { background: rgba(0,0,0,.015); }
+
+    .th-label {
+      display: inline-flex; align-items: center; gap: 4px;
+      cursor: pointer; user-select: none; max-width: 100%;
+    }
+    .th-label:hover { color: var(--brand); }
+    .sort-arrow { font-size: 9px; opacity: .45; }
+    th.sorted .sort-arrow { opacity: 1; color: var(--brand); }
+    .col-resize-handle {
+      position: absolute; top: 0; right: -4px; bottom: 0; width: 8px;
+      cursor: col-resize; z-index: 2;
+    }
+    .col-resize-handle:hover, .col-resize-handle.resizing { background: rgba(0,0,0,.10); }
 
     .col-in { color: var(--accent); font-weight: 600; white-space: nowrap; }
     .tenant-cell { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
@@ -270,6 +283,7 @@
 
   <div id="main" style="display:none;">
     <table class="rw-table">
+      <colgroup id="rw-colgroup"></colgroup>
       <thead id="rw-thead"></thead>
       <tbody id="rw-tbody"></tbody>
       <tfoot id="rw-tfoot"></tfoot>

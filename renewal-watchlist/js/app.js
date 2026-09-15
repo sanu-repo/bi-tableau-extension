@@ -47,6 +47,36 @@
 
   var DEFAULT_BG_COLOR = '#FFFFFF';
 
+  var DEFAULT_COLUMN_WIDTHS = {
+    expiry: 90, inDays: 60, tenant: 220, area: 90,
+    rate: 150, uplift: 90, newRent: 130, rent: 110,
+  };
+
+  var columnWidths = loadColumnWidths();
+  var sortState = loadSortState();
+
+  function loadColumnWidths() {
+    try {
+      var raw = localStorage.getItem('rw-column-widths');
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+
+  function saveColumnWidths() {
+    try { localStorage.setItem('rw-column-widths', JSON.stringify(columnWidths)); } catch (e) {}
+  }
+
+  function loadSortState() {
+    try {
+      var raw = localStorage.getItem('rw-sort-state');
+      return raw ? JSON.parse(raw) : { id: 'expiry', dir: 'asc' };
+    } catch (e) { return { id: 'expiry', dir: 'asc' }; }
+  }
+
+  function saveSortState() {
+    try { localStorage.setItem('rw-sort-state', JSON.stringify(sortState)); } catch (e) {}
+  }
+
   var cfg = {
     sourceWorksheet: '',
     bgColor: DEFAULT_BG_COLOR,
@@ -769,6 +799,57 @@
     },
   };
 
+  var SORT_GETTERS = {
+    expiry:  function (item) { return item.date ? item.date.getTime() : null; },
+    inDays:  function (item) { return item.date ? item.date.getTime() : null; },
+    tenant:  function (item) { return String(item.row[cfg.fieldMappings.tenantNameField] || '').toLowerCase(); },
+    area:    function (item) { return cfg.fieldMappings.areaField ? parseNumeric(item.row['__raw__' + cfg.fieldMappings.areaField]) : NaN; },
+    rate:    function (item) { return item.derived.newRate; },
+    uplift:  function (item) { return item.derived.upliftPct; },
+    newRent: function (item) { return item.derived.newRent; },
+    rent:    function (item) { return item.derived.rent; },
+  };
+
+  function sortEnriched(enriched) {
+    var getter = SORT_GETTERS[sortState.id] || SORT_GETTERS.expiry;
+    var dir = sortState.dir === 'desc' ? -1 : 1;
+    enriched.sort(function (a, b) {
+      var va = getter(a), vb = getter(b);
+      var aNull = va === null || va === undefined || (typeof va === 'number' && isNaN(va));
+      var bNull = vb === null || vb === undefined || (typeof vb === 'number' && isNaN(vb));
+      if (aNull && bNull) return 0;
+      if (aNull) return 1;
+      if (bNull) return -1;
+      if (typeof va === 'string') return va.localeCompare(vb) * dir;
+      return (va - vb) * dir;
+    });
+  }
+
+  function startColumnResize(e, colId, th) {
+    e.preventDefault(); e.stopPropagation();
+    var startX = e.clientX;
+    var startWidth = th.getBoundingClientRect().width;
+    var $colgroup = document.getElementById('rw-colgroup');
+    var col = $colgroup ? $colgroup.querySelector('col[data-col-id="' + colId + '"]') : null;
+    var handle = e.currentTarget;
+    handle.classList.add('resizing');
+
+    function onMove(ev) {
+      var delta = ev.clientX - startX;
+      var newWidth = Math.max(40, Math.round(startWidth + delta));
+      columnWidths[colId] = newWidth;
+      if (col) col.style.width = newWidth + 'px';
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      handle.classList.remove('resizing');
+      saveColumnWidths();
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
   function visibleColumns() {
     return (cfg.columnConfig.columns || []).filter(function (c) { return c.visible; });
   }
@@ -780,15 +861,51 @@
 
   function renderTableHeader() {
     var $thead = document.getElementById('rw-thead');
+    var $colgroup = document.getElementById('rw-colgroup');
     if (!$thead) return;
     $thead.innerHTML = '';
+    if ($colgroup) $colgroup.innerHTML = '';
+
     var tr = document.createElement('tr');
+
     visibleColumns().forEach(function (colDef) {
+      var isNumeric = COLUMN_DEFS[colDef.id] && COLUMN_DEFS[colDef.id].numeric;
+      var width = columnWidths[colDef.id] || DEFAULT_COLUMN_WIDTHS[colDef.id] || 100;
+
+      if ($colgroup) {
+        var col = document.createElement('col');
+        col.style.width = width + 'px';
+        col.dataset.colId = colDef.id;
+        $colgroup.appendChild(col);
+      }
+
       var th = document.createElement('th');
-      if (COLUMN_DEFS[colDef.id] && COLUMN_DEFS[colDef.id].numeric) th.className = 'num';
-      th.textContent = columnLabel(colDef);
+      if (isNumeric) th.className = 'num';
+      if (sortState.id === colDef.id) th.className = (th.className ? th.className + ' ' : '') + 'sorted';
+
+      var labelSpan = document.createElement('span'); labelSpan.className = 'th-label';
+      labelSpan.appendChild(document.createTextNode(columnLabel(colDef)));
+      var arrow = document.createElement('span'); arrow.className = 'sort-arrow';
+      arrow.textContent = sortState.id === colDef.id ? (sortState.dir === 'asc' ? '▲' : '▼') : '↕';
+      labelSpan.appendChild(arrow);
+      labelSpan.addEventListener('click', function () {
+        if (sortState.id === colDef.id) {
+          sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          sortState.id = colDef.id; sortState.dir = 'asc';
+        }
+        saveSortState();
+        applyAndRender();
+      });
+      th.appendChild(labelSpan);
+
+      var handle = document.createElement('div'); handle.className = 'col-resize-handle';
+      handle.addEventListener('mousedown', function (e) { startColumnResize(e, colDef.id, th); });
+      th.appendChild(handle);
+
       tr.appendChild(th);
     });
+
     $thead.appendChild(tr);
   }
 
@@ -803,11 +920,7 @@
       return { row: row, date: d, derived: deriveRow(row) };
     });
 
-    enriched.sort(function (a, b) {
-      var ta = a.date ? a.date.getTime() : Infinity;
-      var tb = b.date ? b.date.getTime() : Infinity;
-      return ta - tb;
-    });
+    sortEnriched(enriched);
 
     $tbody.innerHTML = '';
 

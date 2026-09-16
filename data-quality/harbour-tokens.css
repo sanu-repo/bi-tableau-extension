@@ -1,0 +1,41 @@
+/* ── Harbour Design System tokens (Aldar) ─────────────────────────────────── */
+:root {
+  /* Brand */
+  --brand:        #2F245C; /* Ink 700 */
+  --brand-hover:  #291F52; /* Ink 800 */
+  --brand-active: #231A47; /* Ink 900 */
+  --brand-tonal:  #EEEDF7; /* Ink 50 */
+  --accent:       #EB6924; /* Terracotta 700 */
+  --accent-hover: #E35205; /* Terracotta 800 */
+
+  /* Neutrals */
+  --text:           #252525; /* Shale 900 */
+  --text-secondary: #3C3C3C; /* Shale 800 */
+  --text-muted:     #878787; /* Shale 500 */
+  --text-disabled:  #A3A3A3; /* Shale 400 */
+  --border:         #D4D4D4; /* Shale 200 */
+  --border-subtle:  #E7E7E7; /* Shale 100 */
+  --bg:             #F7F6F4; /* Warm gray 100 — page bg */
+  --surface:        #FFFFFF; /* White — card/panel bg */
+  --surface2:       #EEEDF7; /* Ink 50 tonal — score-card/badge fills */
+  --hover-fill:     #E7E7E7; /* Shale 100 — plain hover states */
+
+  /* Semantic */
+  --success-bg: #D1FADF; --success-solid: #12B76A; --success-text: #027A48;
+  --warning-bg: #FEF0C7; --warning-solid: #F79009; --warning-text: #B54708;
+  --danger-bg:  #FEE4E2; --danger-solid: #F04438; --danger-text: #B42318;
+  --info-bg:    #EDF1F8; --info-solid: #769CD3; --info-text: #49658B;
+  --danger: #F04438; /* alias for existing var(--danger) call sites */
+
+  /* Shape / motion */
+  --radius:         12px;   /* inputs/dropdowns */
+  --radius-card:    16px;   /* cards/panels */
+  --radius-pill:    9999px; /* buttons/chips/toggles */
+  --shadow-card:     0 4px 12px rgba(0,0,0,.08);
+  --shadow-sm:       0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-elevated: 0 6px 16px rgba(47,36,92,.18);
+  --focus-ring:      0 0 0 3px rgba(129,116,196,.4);
+  --transition:      0.15s ease;
+
+  --font: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}

@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Configure — Data Quality</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <script src="js/tableau.extensions.1.latest.min.js"></script>
+  <link rel="stylesheet" href="harbour-tokens.css" />
   <link rel="stylesheet" href="dialog.css" />
 </head>
 <body>
@@ -227,6 +228,17 @@
         <label>Panel subtitle</label>
         <input type="text" id="inp-panel-title" placeholder="e.g. PROPERTY CUSTOMER OVERVIEW" maxlength="80" />
         <div class="field-hint">Small uppercase text shown above "Data quality" in the panel header</div>
+      </div>
+
+      <div class="section-title">Panel Background</div>
+
+      <div class="field-group">
+        <label>Background colour</label>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <input type="color" id="inp-bg-color" value="#FFFFFF" style="width:40px; height:32px; padding:2px; border-radius:8px; border:1px solid var(--border); cursor:pointer;" />
+          <button type="button" id="btn-bg-reset" class="form-btn secondary" style="padding:6px 12px; font-size:12px;">Reset to default</button>
+        </div>
+        <div class="field-hint">Background of the main data quality panel. Default: white.</div>
       </div>
 
       <div class="section-title">Score Thresholds</div>

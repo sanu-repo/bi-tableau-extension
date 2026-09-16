@@ -26,6 +26,9 @@
       var saved = loadSettings();
       applySavedSettings(saved);
       document.getElementById('btn-save').addEventListener('click', saveAndClose);
+      document.getElementById('btn-bg-reset').addEventListener('click', function () {
+        setVal('inp-bg-color', '#FFFFFF');
+      });
     });
   });
 
@@ -107,6 +110,7 @@
     if (d.greenThreshold != null) setVal('inp-green-threshold', d.greenThreshold);
     if (d.amberThreshold != null) setVal('inp-amber-threshold', d.amberThreshold);
     if (d.trendText)       setVal('inp-trend-text',       d.trendText);
+    setVal('inp-bg-color', d.backgroundColor || '#FFFFFF');
     if (s.demoMode != null) setCheck('chk-demo-mode', s.demoMode);
     setCheck('chk-show-serial', d.showSerialNumber !== false);
     setCheck('chk-show-failing-table', d.showFailingTable === true);
@@ -195,6 +199,7 @@
       trendText:      getVal('inp-trend-text'),
       showSerialNumber: getCheck('chk-show-serial'),
       showFailingTable: getCheck('chk-show-failing-table'),
+      backgroundColor: getVal('inp-bg-color') || '#FFFFFF',
     }));
     tableau.extensions.settings.set('demoMode', JSON.stringify(getCheck('chk-demo-mode')));
 
